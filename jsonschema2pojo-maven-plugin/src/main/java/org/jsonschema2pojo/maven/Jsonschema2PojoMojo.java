@@ -22,11 +22,14 @@ import static org.apache.commons.lang3.StringUtils.*;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
@@ -466,7 +469,15 @@ public class Jsonschema2PojoMojo extends AbstractMojo implements GenerationConfi
      */
     private MavenProject project;
 
+    /**
+     * The mapping for schema ids.
+     * 
+     * @parameter expression="${jsonschema2pojo.idMapping}"
+     */
+    private List<IdMapping> idMappings = Collections.emptyList();
+
     private FileFilter fileFilter = new AllFileFilter();
+
 
     /**
      * Executes the plugin, to read the given source and behavioural properties
@@ -766,6 +777,15 @@ public class Jsonschema2PojoMojo extends AbstractMojo implements GenerationConfi
     @Override
     public String getTimeType() {
         return timeType;
+    }
+
+    @Override
+    public Map<URI, String> getIdMappings() {
+        Map<URI, String> mappings = new HashMap<URI, String>();
+        for(IdMapping idMapping : idMappings) {
+            mappings.put(idMapping.getId(), idMapping.getPackageName());
+        }
+        return mappings;
     }
 
 }

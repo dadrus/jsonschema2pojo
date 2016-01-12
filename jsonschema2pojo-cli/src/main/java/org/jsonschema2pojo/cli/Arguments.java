@@ -20,9 +20,12 @@ import static org.apache.commons.lang3.StringUtils.*;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.net.URI;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.jsonschema2pojo.AllFileFilter;
 import org.jsonschema2pojo.AnnotationStyle;
@@ -359,6 +362,11 @@ public class Arguments implements GenerationConfig {
     @Override
     public String getTimeType() {
         return timeType;
+    }
+
+    @Override
+    public Map<URI, String> getIdMappings() {
+        return Collections.emptyMap();
     }
 
 }

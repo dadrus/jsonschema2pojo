@@ -18,8 +18,10 @@ package org.jsonschema2pojo;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.net.URI;
 import java.net.URL;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.jsonschema2pojo.rules.RuleFactory;
 
@@ -306,63 +308,70 @@ public interface GenerationConfig {
     /**
      * Gets the 'targetVersion' configuration option.
      * 
-     *  @return The target version for generated source files.
+     * @return The target version for generated source files.
      */
     String getTargetVersion();
 
     /**
      * Gets the `includeDynamicAccessors` configuraiton option.
      *
-     * @return Whether to include dynamic getters, setters, and builders
-     *         or to omit these methods.
+     * @return Whether to include dynamic getters, setters, and builders or to
+     *         omit these methods.
      */
     boolean isIncludeDynamicAccessors();
 
     /**
      * Gets the `dateTimeType` configuration option.
-     *         <p>
-     *         Example values:
-     *         <ul>
-     *         <li><code>org.joda.time.LocalDateTime</code> (Joda)</li>
-     *         <li><code>java.time.LocalDateTime</code> (JSR310)</li>
-     *         <li><code>null</code> (default behavior)</li>
-     *         </ul>
+     * <p>
+     * Example values:
+     * <ul>
+     * <li><code>org.joda.time.LocalDateTime</code> (Joda)</li>
+     * <li><code>java.time.LocalDateTime</code> (JSR310)</li>
+     * <li><code>null</code> (default behavior)</li>
+     * </ul>
      *
-     * @return The java type to use instead of {@link java.util.Date}
-     *         when adding date type fields to generate Java types.
+     * @return The java type to use instead of {@link java.util.Date} when
+     *         adding date type fields to generate Java types.
      */
     String getDateTimeType();
 
     /**
      * Gets the `dateType` configuration option.
-     *         <p>
-     *         Example values:
-     *         <ul>
-     *         <li><code>org.joda.time.LocalDate</code> (Joda)</li>
-     *         <li><code>java.time.LocalDate</code> (JSR310)</li>
-     *         <li><code>null</code> (default behavior)</li>
-     *         </ul>
+     * <p>
+     * Example values:
+     * <ul>
+     * <li><code>org.joda.time.LocalDate</code> (Joda)</li>
+     * <li><code>java.time.LocalDate</code> (JSR310)</li>
+     * <li><code>null</code> (default behavior)</li>
+     * </ul>
      *
-     * @return The java type to use instead of string
-     *         when adding string type fields with a format of date (not
-     *         date-time) to generated Java types.
+     * @return The java type to use instead of string when adding string type
+     *         fields with a format of date (not date-time) to generated Java
+     *         types.
      */
     String getDateType();
 
     /**
      * Gets the `timeType` configuration option.
-     *         <p>
-     *         Example values:
-     *         <ul>
-     *         <li><code>org.joda.time.LocalTime</code> (Joda)</li>
-     *         <li><code>java.time.LocalTime</code> (JSR310)</li>
-     *         <li><code>null</code> (default behavior)</li>
-     *         </ul>
+     * <p>
+     * Example values:
+     * <ul>
+     * <li><code>org.joda.time.LocalTime</code> (Joda)</li>
+     * <li><code>java.time.LocalTime</code> (JSR310)</li>
+     * <li><code>null</code> (default behavior)</li>
+     * </ul>
      *
-     * @return The java type to use instead of string
-     *         when adding string type fields with a format of time (not
-     *         date-time) to generated Java types.
+     * @return The java type to use instead of string when adding string type
+     *         fields with a format of time (not date-time) to generated Java
+     *         types.
      */
     String getTimeType();
+
+    /**
+     * Gets the 'idMapping' configuration option
+     * 
+     * @return The map containing the mapping between schema ids and corresponding java package names.
+     */
+    Map<URI, String> getIdMappings();
 
 }

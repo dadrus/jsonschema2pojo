@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.AccessController;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
@@ -784,5 +786,10 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
     @Override
     public String getTimeType() {
         return timeType;
+    }
+
+    @Override
+    public Map<URI, String> getIdMappings() {
+        return Collections.emptyMap();
     }
 }

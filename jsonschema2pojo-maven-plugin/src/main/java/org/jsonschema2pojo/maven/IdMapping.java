@@ -26,6 +26,13 @@ public class IdMapping {
     private URI id;
     private String packageName;
     
+    public IdMapping() {}
+    
+    public IdMapping(URI id, String packageName) {
+        this.id = id;
+        this.packageName = packageName;
+    }
+    
     /**
      * @return the id
      */
