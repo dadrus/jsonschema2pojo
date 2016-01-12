@@ -16,11 +16,13 @@
 
 package org.jsonschema2pojo.integration.config;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.jsonschema2pojo.integration.util.CodeGenerationHelper.config;
-import static org.jsonschema2pojo.integration.util.FileSearchMatcher.*;
-import static org.jsonschema2pojo.integration.util.JsonAssert.*;
-import static org.junit.Assert.*;
+import static org.jsonschema2pojo.integration.util.FileSearchMatcher.containsText;
+import static org.jsonschema2pojo.integration.util.JsonAssert.assertEqualsJson;
+import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -80,21 +82,21 @@ public class GsonIT {
     @Test
     public void enumValuesAreSerializedCorrectly() throws ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 
-        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/schema/enum/typeWithEnumProperty.json", "com.example",
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/schema/enum/typeWithEnumProperties.json", "com.example",
                 config("annotationStyle", "gson",
                         "propertyWordDelimiters", "_"));
 
-        Class generatedType = resultsClassLoader.loadClass("com.example.TypeWithEnumProperty");
-        Class enumType = resultsClassLoader.loadClass("com.example.TypeWithEnumProperty$EnumProperty");
+        Class generatedType = resultsClassLoader.loadClass("com.example.TypeWithEnumProperties");
+        Class enumType = resultsClassLoader.loadClass("com.example.TypeWithEnumProperties$FirstEnum");
         Object instance = generatedType.newInstance();
 
-        Method setter = generatedType.getMethod("setEnumProperty", enumType);
+        Method setter = generatedType.getMethod("setFirstEnum", enumType);
         setter.invoke(instance, enumType.getEnumConstants()[3]);
 
         String json = new Gson().toJson(instance);
         Map<String, String> jsonAsMap = new Gson().fromJson(json, Map.class);
 
-        assertThat(jsonAsMap.get("enum_Property"), is("4 ! 1"));
+        assertThat(jsonAsMap.get("first_enum"), is("4 ! 1"));
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })

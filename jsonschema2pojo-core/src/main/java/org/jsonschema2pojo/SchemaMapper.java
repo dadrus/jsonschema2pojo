@@ -61,15 +61,12 @@ public class SchemaMapper {
      *            generated new types
      * @param className
      *            the name of the parent class the represented by this schema
-     * @param packageName
-     *            the target package that should be used for generated types
      * @param schemaUrl
      *            location of the schema to be used as input
+     *            
      * @return The top-most type generated from the given file
-     * @throws IOException
-     *             if the schema content cannot be read
      */
-    public JType generate(JCodeModel codeModel, String className, URL schemaUrl) throws IOException {
+    public JType generate(JCodeModel codeModel, String className, URL schemaUrl) {
         ObjectNode schemaNode = readSchema(schemaUrl);
         Schema schema = new Schema(null, schemaUrl, schemaNode, null);
         

@@ -59,10 +59,21 @@ public class Schema {
     }
     
     public URI getId() {
-        if(id == null && content.has("id")) {
-            id = URI.create(content.get("id").asText());
+        if(id == null) {
+            id = getId(this);
         }
         return id;
+    }
+    
+    private URI getId(Schema source) {
+        if(source != null) {
+            if(source.getContent().has("id")) {
+                return URI.create(source.getContent().get("id").asText());
+            } else {
+                return getId(source.parent);
+            }
+        }
+        return null;
     }
 
     public JsonNode getContent() {

@@ -1,0 +1,23 @@
+{
+	"definitions": {
+		"other": {
+			"type": "object",
+			"properties": {
+				"propertyOfParent": { "type": "string" }
+			}
+		},
+
+		"child": {
+			"type": "object",
+
+			"properties": {
+				"prop": { "$ref": "#/definitions/other" }
+			}
+		}
+	},
+
+	"type": "object",
+	"properties": {
+		"child": { "$ref": "#/definitions/child" }
+	}
+}

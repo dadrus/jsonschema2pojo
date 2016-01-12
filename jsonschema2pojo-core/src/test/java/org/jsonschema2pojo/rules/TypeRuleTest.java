@@ -18,11 +18,13 @@ package org.jsonschema2pojo.rules;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
@@ -32,17 +34,20 @@ import org.jsonschema2pojo.Schema;
 import org.jsonschema2pojo.util.PackageHelper;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.sun.codemodel.JClass;
+import com.sun.codemodel.JClassAlreadyExistsException;
+import com.sun.codemodel.JClassContainer;
 import com.sun.codemodel.JCodeModel;
 import com.sun.codemodel.JDefinedClass;
 import com.sun.codemodel.JPackage;
 import com.sun.codemodel.JType;
-
 
 public class TypeRuleTest {
 
@@ -51,33 +56,33 @@ public class TypeRuleTest {
 
     private TypeRule rule = new TypeRule(ruleFactory);
 
+    private JPackage jpackage;
+    private ObjectNode objectNode;
+
     @Before
     public void wireUpConfig() {
         when(ruleFactory.getGenerationConfig()).thenReturn(config);
+        jpackage = new JCodeModel()._package(getClass().getPackage().getName());
+        objectNode = new ObjectMapper().createObjectNode();
     }
 
     @Test
     public void applyGeneratesString() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "string");
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is(String.class.getName()));
     }
 
     @Test
     public void applyGeneratesDate() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
-        objectNode.put("type", "string");
-
+        // GIVEN
         TextNode formatNode = TextNode.valueOf("date-time");
+        objectNode.put("type", "string");
         objectNode.put("format", formatNode);
 
         JType mockDateType = mock(JType.class);
@@ -85,414 +90,387 @@ public class TypeRuleTest {
         when(mockFormatRule.apply(eq("fooBar"), eq(formatNode), Mockito.isA(JType.class), isNull(Schema.class))).thenReturn(mockDateType);
         when(ruleFactory.getFormatRule()).thenReturn(mockFormatRule);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result, equalTo(mockDateType));
     }
 
     @Test
     public void applyGeneratesInteger() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "integer");
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is(Integer.class.getName()));
     }
 
     @Test
     public void applyGeneratesIntegerPrimitive() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "integer");
 
         when(config.isUsePrimitives()).thenReturn(true);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is("int"));
     }
 
     @Test
     public void applyGeneratesIntegerUsingJavaTypeIntegerPrimitive() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "integer");
         objectNode.put("javaType", "int");
 
         when(config.isUsePrimitives()).thenReturn(false);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is("int"));
     }
 
     @Test
     public void applyGeneratesIntegerUsingJavaTypeInteger() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "integer");
         objectNode.put("javaType", "java.lang.Integer");
 
         when(config.isUsePrimitives()).thenReturn(true);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is("java.lang.Integer"));
     }
 
     @Test
     public void applyGeneratesIntegerUsingJavaTypeLongPrimitive() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "integer");
         objectNode.put("javaType", "long");
 
         when(config.isUsePrimitives()).thenReturn(false);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is("long"));
     }
 
     @Test
     public void applyGeneratesIntegerUsingJavaTypeLong() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "integer");
         objectNode.put("javaType", "java.lang.Long");
 
         when(config.isUsePrimitives()).thenReturn(true);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is("java.lang.Long"));
     }
 
     @Test
     public void applyGeneratesIntegerUsingJavaTypeLongPrimitiveWhenMaximumGreaterThanIntegerMax() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "integer");
         objectNode.put("maximum", Integer.MAX_VALUE + 1L);
 
         when(config.isUsePrimitives()).thenReturn(true);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is("long"));
     }
 
     @Test
     public void applyGeneratesIntegerUsingJavaTypeLongWhenMaximumGreaterThanIntegerMax() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "integer");
         objectNode.put("maximum", Integer.MAX_VALUE + 1L);
 
         when(config.isUsePrimitives()).thenReturn(false);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is(Long.class.getName()));
     }
 
     @Test
     public void applyGeneratesIntegerUsingJavaTypeLongPrimitiveWhenMaximumLessThanIntegerMin() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "integer");
         objectNode.put("maximum", Integer.MIN_VALUE - 1L);
 
         when(config.isUsePrimitives()).thenReturn(true);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is("long"));
     }
 
     @Test
     public void applyGeneratesIntegerUsingJavaTypeLongWhenMaximumLessThanIntegerMin() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "integer");
         objectNode.put("maximum", Integer.MIN_VALUE - 1L);
 
         when(config.isUsePrimitives()).thenReturn(false);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is(Long.class.getName()));
     }
 
     @Test
     public void applyGeneratesIntegerUsingJavaTypeLongPrimitiveWhenMinimumLessThanIntegerMin() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "integer");
         objectNode.put("minimum", Integer.MIN_VALUE - 1L);
 
         when(config.isUsePrimitives()).thenReturn(true);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is("long"));
     }
 
     @Test
     public void applyGeneratesIntegerUsingJavaTypeLongWhenMinimumLessThanIntegerMin() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "integer");
         objectNode.put("minimum", Integer.MIN_VALUE - 1L);
 
         when(config.isUsePrimitives()).thenReturn(false);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is(Long.class.getName()));
     }
 
     @Test
     public void applyGeneratesIntegerUsingJavaTypeLongPrimitiveWhenMinimumGreaterThanIntegerMax() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "integer");
         objectNode.put("minimum", Integer.MAX_VALUE + 1L);
 
         when(config.isUsePrimitives()).thenReturn(true);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is("long"));
     }
 
     @Test
     public void applyGeneratesIntegerUsingJavaTypeLongWhenMinimumGreaterThanIntegerMax() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "integer");
         objectNode.put("minimum", Integer.MAX_VALUE + 1L);
 
         when(config.isUsePrimitives()).thenReturn(false);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is(Long.class.getName()));
     }
 
     @Test
     public void applyGeneratesIntegerUsingJavaTypeBigInteger() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "integer");
         objectNode.put("javaType", "java.math.BigInteger");
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is("java.math.BigInteger"));
     }
 
     @Test
     public void applyGeneratesNumber() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "number");
 
         when(config.isUseDoubleNumbers()).thenReturn(true);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is(Double.class.getName()));
     }
 
     @Test
     public void applyGeneratesNumberPrimitive() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "number");
 
         when(config.isUsePrimitives()).thenReturn(true);
         when(config.isUseDoubleNumbers()).thenReturn(true);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is("double"));
     }
 
     @Test
     public void applyGeneratesNumberUsingJavaTypeFloatPrimitive() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "number");
         objectNode.put("javaType", "float");
 
         when(config.isUsePrimitives()).thenReturn(false);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is("float"));
     }
 
     @Test
     public void applyGeneratesNumberUsingJavaTypeFloat() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "number");
         objectNode.put("javaType", "java.lang.Float");
 
         when(config.isUsePrimitives()).thenReturn(true);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is("java.lang.Float"));
     }
 
     @Test
     public void applyGeneratesNumberUsingJavaTypeDoublePrimitive() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "number");
         objectNode.put("javaType", "double");
 
         when(config.isUsePrimitives()).thenReturn(false);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is("double"));
     }
 
     @Test
     public void applyGeneratesNumberUsingJavaTypeDouble() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "number");
         objectNode.put("javaType", "java.lang.Double");
 
         when(config.isUsePrimitives()).thenReturn(true);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is("java.lang.Double"));
     }
 
     @Test
     public void applyGeneratesNumberUsingJavaTypeBigDecimal() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "number");
         objectNode.put("javaType", "java.math.BigDecimal");
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is("java.math.BigDecimal"));
     }
 
     @Test
     public void applyGeneratesBoolean() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "boolean");
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is(Boolean.class.getName()));
     }
 
     @Test
     public void applyGeneratesBooleanPrimitive() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "boolean");
 
         when(config.isUsePrimitives()).thenReturn(true);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is("boolean"));
     }
 
     @Test
     public void applyGeneratesAnyAsObject() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "any");
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is(Object.class.getName()));
     }
 
     @Test
     public void applyGeneratesNullAsObject() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "null");
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is(Object.class.getName()));
     }
 
     @Test
     public void applyGeneratesArray() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "array");
 
         JClass mockArrayType = mock(JClass.class);
@@ -500,8 +478,10 @@ public class TypeRuleTest {
         when(mockArrayRule.apply("fooBar", objectNode, jpackage, null)).thenReturn(mockArrayType);
         when(ruleFactory.getArrayRule()).thenReturn(mockArrayRule);
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result, is((JType) mockArrayType));
     }
 
@@ -509,15 +489,12 @@ public class TypeRuleTest {
     public void applyGeneratesCustomObject() {
         // GIVEN
         Schema schema = new Schema(URI.create("http://test.com"), null, null, null);
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
         objectNode.put("type", "object");
-        
+
         PackageHelper packageHelper = mock(PackageHelper.class);
         JDefinedClass mockObjectType = mock(JDefinedClass.class);
         ObjectRule mockObjectRule = mock(ObjectRule.class);
-        
+
         when(mockObjectRule.apply(eq("fooBar"), eq(objectNode), any(JPackage.class), any(Schema.class))).thenReturn(mockObjectType);
         when(ruleFactory.getObjectRule()).thenReturn(mockObjectRule);
         when(ruleFactory.getPackageHelper()).thenReturn(packageHelper);
@@ -531,28 +508,92 @@ public class TypeRuleTest {
 
     @Test
     public void applyChoosesObjectOnUnrecognizedType() {
-
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        // GIVEN
         objectNode.put("type", "unknown");
 
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is(Object.class.getName()));
-
     }
 
     @Test
     public void applyDefaultsToTypeAnyObject() {
+        // GIVEN
 
-        JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
-
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
-
+        // WHEN
         JType result = rule.apply("fooBar", objectNode, jpackage, null);
 
+        // THEN
         assertThat(result.fullName(), is(Object.class.getName()));
     }
+    
+    @Test
+    public void applyGeneratesEnumInAPackage() throws JClassAlreadyExistsException {
+        // GIVEN
+        Schema schema = new Schema(URI.create("http://test.com"), null, null, null);
+        ArrayNode enumNode = objectNode.arrayNode();
+        enumNode.add("A");
+        enumNode.add("B");
+        enumNode.add("C");
+        objectNode.put("enum", enumNode);
+        
+        PackageHelper packageHelper = mock(PackageHelper.class);
+        JDefinedClass mockEnumType = mock(JDefinedClass.class);
+        EnumRule mockEnumRule = mock(EnumRule.class);
+        GenerationConfig config = mock(GenerationConfig.class);
 
+        when(mockEnumRule.apply(eq("fooBar"), eq(objectNode), any(JClassContainer.class), any(Schema.class))).thenReturn(mockEnumType);
+        when(ruleFactory.getEnumRule()).thenReturn(mockEnumRule);
+        when(ruleFactory.getPackageHelper()).thenReturn(packageHelper);
+        when(ruleFactory.getGenerationConfig()).thenReturn(config);
+        
+        JDefinedClass clazz = jpackage._class("Parent");
+
+        // WHEN
+        JType result = rule.apply("fooBar", objectNode, clazz, schema);
+
+        // THEN
+        assertThat(result, is((JType) mockEnumType));
+        
+        ArgumentCaptor<JClassContainer> containerCaptor = ArgumentCaptor.forClass(JClassContainer.class);
+        verify(mockEnumRule).apply(eq("fooBar"), eq(objectNode), containerCaptor.capture(), eq(schema));
+        JClassContainer container = containerCaptor.getValue();
+        assertThat(container, is(instanceOf(JPackage.class)));
+        JPackage jPackage =(JPackage) container;
+        assertThat(jPackage.name(), equalTo("com.test"));
+    }
+
+    @Test
+    public void applyGeneratesEnumInAClass() throws JClassAlreadyExistsException {
+        // GIVEN
+        Schema schema = new Schema(URI.create("http://test.com"), null, null, null);
+        ArrayNode enumNode = objectNode.arrayNode();
+        enumNode.add("A");
+        enumNode.add("B");
+        enumNode.add("C");
+        objectNode.put("enum", enumNode);
+        
+        PackageHelper packageHelper = mock(PackageHelper.class);
+        JDefinedClass mockEnumType = mock(JDefinedClass.class);
+        EnumRule mockEnumRule = mock(EnumRule.class);
+        GenerationConfig config = mock(GenerationConfig.class);
+
+        when(mockEnumRule.apply(eq("fooBar"), eq(objectNode), any(JClassContainer.class), any(Schema.class))).thenReturn(mockEnumType);
+        when(ruleFactory.getEnumRule()).thenReturn(mockEnumRule);
+        when(ruleFactory.getPackageHelper()).thenReturn(packageHelper);
+        when(ruleFactory.getGenerationConfig()).thenReturn(config);
+        
+        JDefinedClass clazz = jpackage._class("Parent");
+        schema.setJavaType(clazz);
+
+        // WHEN
+        JType result = rule.apply("fooBar", objectNode, clazz, schema);
+
+        // THEN
+        assertThat(result, is((JType) mockEnumType));
+        
+        verify(mockEnumRule).apply(eq("fooBar"), eq(objectNode), eq(clazz), eq(schema));
+    }
 }

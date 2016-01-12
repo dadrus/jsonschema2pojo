@@ -38,8 +38,9 @@ public class SchemaStore {
 
     /**
      * Create or look up a new schema which has the given reference and read the
-     * contents of the given reference as a URL. If a schema with the given reference is
-     * already known, then a reference to the original schema will be returned.
+     * contents of the given reference as a URL. If a schema with the given
+     * reference is already known, then a reference to the original schema will
+     * be returned.
      * 
      * @param reference
      *            the reference of the schema being created
@@ -67,47 +68,100 @@ public class SchemaStore {
     }
 
     /**
-     * Create or look up a new schema using the given schema as a parent and the
-     * path as a relative reference. If a schema with the given parent and
-     * relative path is already known, then a reference to the original schema
-     * will be returned.
+     * Create or look up a new schema using the given schema as a source for the
+     * lookup and the path as an absolute or relative reference. If a schema
+     * with the given source and path is already known, then a reference to the
+     * original schema will be returned, otherwise the new schema with required
+     * hierarchy is created.
      * 
-     * @param parent
-     *            the schema which is the parent of the schema to be created.
+     * @param source
+     *            the schema which is the parent or the source for the lookup of
+     *            the schema to be created.
      * @param path
-     *            the relative path of this schema (will be used to create a
-     *            complete URI by resolving this path against the parent
-     *            schema's reference)
+     *            the path of the schema to be returned (will be used to create
+     *            a complete {@link URL} by resolving this path against the
+     *            source schema's reference)
+     * 
      * @return a schema object containing the contents of the given path
+     * 
+     * @throws IllegalArgumentException
+     *             if the path is an unsupported URL (e.g. unknown protocol) or
+     *             if the path is a relative path within the source schema to a
+     *             not existing type definition.
      */
-    @SuppressWarnings("PMD.UselessParentheses")
-    public Schema create(Schema parent, String path) {
+    public Schema create(Schema source, String path) {
 
         if (path.equals("#")) {
-            return parent;
+            return source;
         }
-        
+
         path = stripEnd(path, "#?&/");
-        
-        URL url;
+
         try {
-            if(parent == null || parent.getUrl() == null) {
+            URL url;
+            if (source == null || source.getUrl() == null) {
                 url = URLUtil.getURL(path);
             } else {
-                url = URLUtil.resolveURL(parent.getUrl().toURI(), path);
+                url = URLUtil.resolveURL(source.getUrl().toURI(), path);
             }
+
+            if (selfReferenceWithoutParentFile(source, path)) {
+                schemas.put(url, new Schema(source.getId(), url, fragmentResolver.resolve(source.getContent(), path), source));
+                return schemas.get(url);
+            }
+
+            if (schemas.containsKey(url)) {
+                return schemas.get(url);
+            }
+
+            if (source == null) {
+                URL parentUrl = URLUtil.getURL(removeFragment(url).toString());
+                JsonNode content = contentResolver.resolve(parentUrl.toURI());
+                source = new Schema(null, parentUrl, content, null);
+                schemas.put(parentUrl, source);
+            }
+
+            if (url.toString().contains("#")) {
+                if (!url.toString().startsWith(source.getUrl().toString())) {
+                    // not a self reference
+                    // maybe this is not allowed by the json schema standard. But having this we can reference types from other schema files
+                    source = create(null, removeFragment(url).toString());
+                }
+
+                schemas.put(url, resolveSchema(source, url));
+            } else if (!schemas.containsKey(url)) {
+                JsonNode content = contentResolver.resolve(url.toURI());
+                schemas.put(url, new Schema(null, url, content, null));
+            }
+
+            return schemas.get(url);
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
+    }
 
-        if (selfReferenceWithoutParentFile(parent, path)) {
-            
-            schemas.put(url, new Schema(parent.getId(), url, fragmentResolver.resolve(parent.getContent(), path), parent));
-            return schemas.get(url);
+    private Schema resolveSchema(Schema source, URL url) {
+        String contentPath = '#' + substringAfter(url.toString(), "#");
+        while(source != null) {
+            try {
+                JsonNode childContent = fragmentResolver.resolve(source.getContent(), contentPath);
+                return new Schema(null, url, childContent, source);
+            } catch(IllegalArgumentException e) {
+                source = source.getParent();
+            }
         }
-        
-        return create(parent.getId(), url);
+        throw new IllegalArgumentException("No fragment defined for: " + url.toString());
+    }
 
+    private JsonNode resolveContent(Schema source, URL url) {
+        try {
+            return fragmentResolver.resolve(source.getContent(), '#' + substringAfter(url.toString(), "#"));
+        } catch(IllegalArgumentException e) {
+            if(source.getParent() == null) {
+                throw e;
+            }
+            return resolveContent(source.getParent(), url);
+        }
     }
 
     protected boolean selfReferenceWithoutParentFile(Schema parent, String path) {

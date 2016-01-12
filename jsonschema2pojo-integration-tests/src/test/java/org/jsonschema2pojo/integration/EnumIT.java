@@ -16,10 +16,15 @@
 
 package org.jsonschema2pojo.integration;
 
-import static java.lang.reflect.Modifier.*;
-import static org.hamcrest.Matchers.*;
+import static java.lang.reflect.Modifier.isPublic;
+import static java.lang.reflect.Modifier.isStatic;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.jsonschema2pojo.integration.util.CodeGenerationHelper.config;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -38,65 +43,89 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SuppressWarnings("rawtypes")
 public class EnumIT {
-    
-    @ClassRule public static Jsonschema2PojoRule classSchemaRule = new Jsonschema2PojoRule();
-    @Rule public Jsonschema2PojoRule schemaRule = new Jsonschema2PojoRule();
+
+    @ClassRule
+    public static Jsonschema2PojoRule classSchemaRule = new Jsonschema2PojoRule();
+    @Rule
+    public Jsonschema2PojoRule schemaRule = new Jsonschema2PojoRule();
 
     private static Class parentClass;
+    private static Class<Enum> nestedEnumClass;
     private static Class<Enum> enumClass;
 
     @BeforeClass
     @SuppressWarnings("unchecked")
     public static void generateAndCompileEnum() throws ClassNotFoundException {
 
-        ClassLoader resultsClassLoader = classSchemaRule.generateAndCompile("/schema/enum/typeWithEnumProperty.json", "com.example", config("propertyWordDelimiters", "_"));
+        ClassLoader resultsClassLoader = classSchemaRule.generateAndCompile("/schema/enum/typeWithEnumProperties.json", "com.example", config("propertyWordDelimiters", "_"));
 
-        parentClass = resultsClassLoader.loadClass("com.example.TypeWithEnumProperty");
-        enumClass = (Class<Enum>) resultsClassLoader.loadClass("com.example.TypeWithEnumProperty$EnumProperty");
-
+        parentClass = resultsClassLoader.loadClass("com.example.TypeWithEnumProperties");
+        nestedEnumClass = (Class<Enum>) resultsClassLoader.loadClass("com.example.TypeWithEnumProperties$FirstEnum");
+        enumClass = (Class<Enum>) resultsClassLoader.loadClass("com.example.OtherEnum");
     }
 
     @Test
     public void enumPropertyCreatesAStaticInnerType() throws ClassNotFoundException {
 
+        assertThat(nestedEnumClass.isEnum(), is(true));
+
+        assertThat(isPublic(nestedEnumClass.getModifiers()), is(true));
+        assertThat(isStatic(nestedEnumClass.getModifiers()), is(true));
+
         assertThat(enumClass.isEnum(), is(true));
 
         assertThat(isPublic(enumClass.getModifiers()), is(true));
-        assertThat(isStatic(enumClass.getModifiers()), is(true));
-
+        assertThat(isStatic(enumClass.getModifiers()), is(false));
     }
 
     @Test
     public void enumClassIncludesCorrectlyNamedConstants() {
 
-        assertThat(enumClass.getEnumConstants()[0].name(), is("ONE"));
-        assertThat(enumClass.getEnumConstants()[1].name(), is("SECOND_ONE"));
-        assertThat(enumClass.getEnumConstants()[2].name(), is("_3_RD_ONE"));
-        assertThat(enumClass.getEnumConstants()[3].name(), is("_4_1"));
+        assertThat(nestedEnumClass.getEnumConstants()[0].name(), is("ONE"));
+        assertThat(nestedEnumClass.getEnumConstants()[1].name(), is("SECOND_ONE"));
+        assertThat(nestedEnumClass.getEnumConstants()[2].name(), is("_3_RD_ONE"));
+        assertThat(nestedEnumClass.getEnumConstants()[3].name(), is("_4_1"));
+
+        assertThat(enumClass.getEnumConstants()[0].name(), is("WHITE"));
+        assertThat(enumClass.getEnumConstants()[1].name(), is("BLACK"));
 
     }
 
     @Test
     public void enumContainsWorkingAnnotatedSerializationMethod() throws NoSuchMethodException {
 
-        Method toString = enumClass.getMethod("toString");
+        Method toString = nestedEnumClass.getMethod("toString");
 
-        assertThat(enumClass.getEnumConstants()[0].toString(), is("one"));
-        assertThat(enumClass.getEnumConstants()[1].toString(), is("secondOne"));
-        assertThat(enumClass.getEnumConstants()[2].toString(), is("3rd one"));
+        assertThat(nestedEnumClass.getEnumConstants()[0].toString(), is("one"));
+        assertThat(nestedEnumClass.getEnumConstants()[1].toString(), is("secondOne"));
+        assertThat(nestedEnumClass.getEnumConstants()[2].toString(), is("3rd one"));
 
         assertThat(toString.isAnnotationPresent(JsonValue.class), is(true));
 
+        
+        toString = enumClass.getMethod("toString");
+
+        assertThat(enumClass.getEnumConstants()[0].toString(), is("white"));
+        assertThat(enumClass.getEnumConstants()[1].toString(), is("black"));
+
+        assertThat(toString.isAnnotationPresent(JsonValue.class), is(true));
     }
 
     @Test
     public void enumContainsWorkingAnnotatedDeserializationMethod() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
-        Method fromValue = enumClass.getMethod("fromValue", String.class);
+        Method fromValue = nestedEnumClass.getMethod("fromValue", String.class);
 
-        assertThat((Enum) fromValue.invoke(enumClass, "one"), is(sameInstance(enumClass.getEnumConstants()[0])));
-        assertThat((Enum) fromValue.invoke(enumClass, "secondOne"), is(sameInstance(enumClass.getEnumConstants()[1])));
-        assertThat((Enum) fromValue.invoke(enumClass, "3rd one"), is(sameInstance(enumClass.getEnumConstants()[2])));
+        assertThat((Enum) fromValue.invoke(nestedEnumClass, "one"), is(sameInstance(nestedEnumClass.getEnumConstants()[0])));
+        assertThat((Enum) fromValue.invoke(nestedEnumClass, "secondOne"), is(sameInstance(nestedEnumClass.getEnumConstants()[1])));
+        assertThat((Enum) fromValue.invoke(nestedEnumClass, "3rd one"), is(sameInstance(nestedEnumClass.getEnumConstants()[2])));
+
+        assertThat(fromValue.isAnnotationPresent(JsonCreator.class), is(true));
+        
+        fromValue = enumClass.getMethod("fromValue", String.class);
+
+        assertThat((Enum) fromValue.invoke(enumClass, "white"), is(sameInstance(enumClass.getEnumConstants()[0])));
+        assertThat((Enum) fromValue.invoke(enumClass, "black"), is(sameInstance(enumClass.getEnumConstants()[1])));
 
         assertThat(fromValue.isAnnotationPresent(JsonCreator.class), is(true));
 
@@ -105,7 +134,16 @@ public class EnumIT {
     @Test
     public void enumDeserializationMethodRejectsInvalidValues() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
-        Method fromValue = enumClass.getMethod("fromValue", String.class);
+        Method fromValue = nestedEnumClass.getMethod("fromValue", String.class);
+
+        try {
+            fromValue.invoke(nestedEnumClass, "something invalid");
+            fail();
+        } catch (InvocationTargetException e) {
+            assertThat(e.getCause(), is(instanceOf(IllegalArgumentException.class)));
+        }
+
+        fromValue = enumClass.getMethod("fromValue", String.class);
 
         try {
             fromValue.invoke(enumClass, "something invalid");
@@ -113,7 +151,6 @@ public class EnumIT {
         } catch (InvocationTargetException e) {
             assertThat(e.getCause(), is(instanceOf(IllegalArgumentException.class)));
         }
-
     }
 
     @Test
@@ -215,31 +252,48 @@ public class EnumIT {
     public void jacksonCanMarshalEnums() throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException, IOException {
 
         Object valueWithEnumProperty = parentClass.newInstance();
-        Method enumSetter = parentClass.getMethod("setEnumProperty", enumClass);
-        enumSetter.invoke(valueWithEnumProperty, enumClass.getEnumConstants()[2]);
+        Method enumSetter = parentClass.getMethod("setFirstEnum", nestedEnumClass);
+        enumSetter.invoke(valueWithEnumProperty, nestedEnumClass.getEnumConstants()[2]);
+        
+        enumSetter = parentClass.getMethod("setSecondEnum", enumClass);
+        enumSetter.invoke(valueWithEnumProperty, enumClass.getEnumConstants()[0]);
 
         ObjectMapper objectMapper = new ObjectMapper();
 
         String jsonString = objectMapper.writeValueAsString(valueWithEnumProperty);
         JsonNode jsonTree = objectMapper.readTree(jsonString);
 
-        assertThat(jsonTree.size(), is(1));
-        assertThat(jsonTree.has("enum_Property"), is(true));
-        assertThat(jsonTree.get("enum_Property").isTextual(), is(true));
-        assertThat(jsonTree.get("enum_Property").asText(), is("3rd one"));
+        assertThat(jsonTree.size(), is(2));
+        
+        assertThat(jsonTree.has("first_enum"), is(true));
+        assertThat(jsonTree.get("first_enum").isTextual(), is(true));
+        assertThat(jsonTree.get("first_enum").asText(), is("3rd one"));
+        
+        assertThat(jsonTree.has("second_enum"), is(true));
+        assertThat(jsonTree.get("second_enum").isTextual(), is(true));
+        assertThat(jsonTree.get("second_enum").asText(), is("white"));
     }
 
     @Test
     @SuppressWarnings("unchecked")
     public void jacksonCanUnmarshalEnums() throws IOException, IllegalAccessException, InvocationTargetException, SecurityException, NoSuchMethodException {
 
-        String jsonString = "{\"enum_Property\" : \"3rd one\"}";
+        String jsonString = "{\"first_enum\" : \"3rd one\"}";
 
         Object result = new ObjectMapper().readValue(jsonString, parentClass);
 
-        Method enumGetter = parentClass.getMethod("getEnumProperty");
+        Method enumGetter = parentClass.getMethod("getFirstEnum");
 
-        assertThat((Enum) enumGetter.invoke(result), is(equalTo(enumClass.getEnumConstants()[2])));
+        assertThat((Enum) enumGetter.invoke(result), is(equalTo(nestedEnumClass.getEnumConstants()[2])));
+        
+        
+        jsonString = "{\"second_enum\" : \"white\"}";
+
+        result = new ObjectMapper().readValue(jsonString, parentClass);
+
+        enumGetter = parentClass.getMethod("getSecondEnum");
+
+        assertThat((Enum) enumGetter.invoke(result), is(equalTo(enumClass.getEnumConstants()[0])));
 
     }
 

@@ -1,0 +1,17 @@
+{
+	"definitions": {
+    	"other_enum": {
+		    "type": "string",
+		    "enum": ["white", "black"]
+	    }
+    },
+    
+    "type" : "object",
+    "properties" : {
+        "first_enum" : {
+            "type" : "string",
+            "enum" : ["one", "secondOne", "3rd one", "4 ! 1"]
+        },
+        "second_enum" : { "$ref": "#/definitions/other_enum" }
+    }
+}
