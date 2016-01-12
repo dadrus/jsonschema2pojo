@@ -16,6 +16,9 @@
 
 package org.jsonschema2pojo;
 
+import java.io.FileNotFoundException;
+import java.net.URL;
+
 public enum URLProtocol {
     FILE("file"),
     RESOURCE("resource"),
@@ -43,5 +46,22 @@ public enum URLProtocol {
         }
         // default to file
         return NO_PROTOCOL;
+    }
+    
+    public URL toUrl(String resource) throws FileNotFoundException {
+        String path = resource.substring(protocol.length() + 1);
+        URL url = getDefaultClassLoader().getResource(path);
+        if (url == null) {
+            throw new FileNotFoundException("class path resource [" + path + "]" + " cannot be resolved to URL because it does not exist");
+        }
+        return url;
+    }
+    
+    private static ClassLoader getDefaultClassLoader() {
+        try {
+            return Thread.currentThread().getContextClassLoader();
+        } catch (Throwable ex) {
+            return URLProtocol.class.getClassLoader();
+        }
     }
 }
