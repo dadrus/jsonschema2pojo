@@ -65,7 +65,7 @@ public class FilteringIT {
         ClassLoader resultsClassLoader = schemaRule.generateAndCompile(filteredSchemaUrl, "com.example",
                 config("includes", new String[] { "**/*.json" }, "excludes", new String[] { "excluded.json" }));
 
-        resultsClassLoader.loadClass("com.example.sub.Sub");
+        resultsClassLoader.loadClass("com.example.Sub");
     }
 
     @Test
@@ -74,6 +74,6 @@ public class FilteringIT {
                 config("includes", new String[] {}, "excludes", new String[] {}));
 
         resultsClassLoader.loadClass("com.example.sub.Sub");
-        resultsClassLoader.loadClass("com.example.sub.sub2.Sub");
+        resultsClassLoader.loadClass("com.example.sub.Sub_");
     }
 }

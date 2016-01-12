@@ -16,17 +16,24 @@
 
 package org.jsonschema2pojo.integration.ref;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.net.URL;
 
-import org.apache.commons.io.IOUtils;
+import org.jsonschema2pojo.DefaultGenerationConfig;
+import org.jsonschema2pojo.GenerationConfig;
+import org.jsonschema2pojo.SchemaGenerator;
 import org.jsonschema2pojo.SchemaMapper;
 import org.jsonschema2pojo.integration.util.CodeGenerationHelper;
 import org.jsonschema2pojo.integration.util.Jsonschema2PojoRule;
+import org.jsonschema2pojo.rules.RuleFactory;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -79,10 +86,19 @@ public class SelfRefIT {
     
     @Test
     public void nestedSelfRefsInStringContentWithoutParentFile() throws NoSuchMethodException, ClassNotFoundException, IOException {
-
-        String schemaContents = IOUtils.toString(CodeGenerationHelper.class.getResource("/schema/ref/nestedSelfRefsReadAsString.json"));
+        String targetPackageName = "com.example";
+        URL schemaUrl = CodeGenerationHelper.class.getResource("/schema/ref/nestedSelfRefsReadAsString.json");
         JCodeModel codeModel = new JCodeModel();
-        new SchemaMapper().generate(codeModel, "NestedSelfRefsInString", "com.example", schemaContents);
+        
+        RuleFactory ruleFactory = new RuleFactory();
+        GenerationConfig config = spy(new DefaultGenerationConfig());
+        when(config.getTargetPackage()).thenReturn(targetPackageName);
+        
+        ruleFactory.setGenerationConfig(config);
+
+        SchemaMapper mapper = new SchemaMapper(ruleFactory, new SchemaGenerator());
+        
+        mapper.generate(codeModel, "NestedSelfRefsInString", schemaUrl);
 
         codeModel.build(schemaRule.getGenerateDir());
         

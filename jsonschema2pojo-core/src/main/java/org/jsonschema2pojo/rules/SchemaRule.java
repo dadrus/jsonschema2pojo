@@ -16,8 +16,9 @@
 
 package org.jsonschema2pojo.rules;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.jsonschema2pojo.Schema;
+
+import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.codemodel.JClassContainer;
 import com.sun.codemodel.JType;
 
@@ -65,13 +66,8 @@ public class SchemaRule implements Rule<JClassContainer, JType> {
 
             return apply(nodeName, schemaNode, generatableType, schema);
         }
-
-        JType javaType;
-        if (schemaNode.has("enum")) {
-            javaType = ruleFactory.getEnumRule().apply(nodeName, schemaNode, generatableType, schema);
-        } else {
-            javaType = ruleFactory.getTypeRule().apply(nodeName, schemaNode, generatableType.getPackage(), schema);
-        }
+        
+        JType javaType = ruleFactory.getTypeRule().apply(nodeName, schemaNode, generatableType, schema);
         schema.setJavaTypeIfEmpty(javaType);
 
         return javaType;

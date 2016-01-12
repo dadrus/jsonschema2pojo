@@ -16,16 +16,20 @@
 
 package org.jsonschema2pojo.rules;
 
+import static org.apache.commons.lang3.StringUtils.*;
 import static org.jsonschema2pojo.rules.PrimitiveTypes.*;
 
+import java.net.URI;
 import java.util.Iterator;
 
 import org.jsonschema2pojo.GenerationConfig;
 import org.jsonschema2pojo.Schema;
+import org.jsonschema2pojo.util.NameConverter;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.codemodel.JClassContainer;
 import com.sun.codemodel.JCodeModel;
+import com.sun.codemodel.JPackage;
 import com.sun.codemodel.JType;
 
 /**
@@ -78,14 +82,21 @@ public class TypeRule implements Rule<JClassContainer, JType> {
      */
     @Override
     public JType apply(String nodeName, JsonNode node, JClassContainer jClassContainer, Schema schema) {
-
+        
         String propertyTypeName = getTypeName(node);
 
         JType type;
 
-        if (propertyTypeName.equals("object") || (node.has("properties") && node.path("properties").size() > 0)) {
-
-            type = ruleFactory.getObjectRule().apply(nodeName, node, jClassContainer.getPackage(), schema);
+        if (propertyTypeName.equals("enum")) {
+            JClassContainer enumContainer = jClassContainer;
+            if(schema.getJavaType() == null) {
+                // this enum is defined outside of a type definition of an object, thus it represents its own type
+                enumContainer = createPackage(jClassContainer.owner(), schema, defaultString(ruleFactory.getGenerationConfig().getTargetPackage()));
+            }
+            type = ruleFactory.getEnumRule().apply(nodeName, node, enumContainer, schema);
+        } else if (propertyTypeName.equals("object") || (node.has("properties") && node.path("properties").size() > 0)) {
+            JPackage jpackage = createPackage(jClassContainer.owner(), schema, defaultString(ruleFactory.getGenerationConfig().getTargetPackage()));
+            type = ruleFactory.getObjectRule().apply(nodeName, node, jpackage, schema);
         } else if (node.has("javaType")) {
 
             type = getJavaType(node.path("javaType").asText(), jClassContainer.owner());
@@ -117,8 +128,27 @@ public class TypeRule implements Rule<JClassContainer, JType> {
 
         return type;
     }
+    
+    private JPackage createPackage(JCodeModel codeModel, Schema schema, String defaultPackage) {
+        URI namespace  = schema.getId();
+        String packageName = defaultPackage;
+        if(namespace != null) {
+            packageName = ruleFactory.getPackageHelper().getPackageName(namespace);
+            if(packageName == null) {
+                // no mapping provided
+                NameConverter nameConverter = new NameConverter.Standard();
+                packageName = nameConverter.toPackageName(namespace.toString());
+            }
+        }
+        
+        return codeModel._package(packageName);
+    }
 
     private String getTypeName(JsonNode node) {
+        if(node.has("enum")) {
+            return "enum";
+        }
+        
         if (node.has("type") && node.get("type").isArray() && node.get("type").size() > 0) {
             for (Iterator<JsonNode> typeNames = node.get("type").iterator(); typeNames.hasNext();) {
                 String typeName = typeNames.next().asText();

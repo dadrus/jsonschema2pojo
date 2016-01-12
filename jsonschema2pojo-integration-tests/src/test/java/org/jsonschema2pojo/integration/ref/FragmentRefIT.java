@@ -16,17 +16,28 @@
 
 package org.jsonschema2pojo.integration.ref;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItemInArray;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import org.jsonschema2pojo.Schema;
 import org.jsonschema2pojo.integration.util.Jsonschema2PojoRule;
 import org.jsonschema2pojo.rules.RuleFactory;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,6 +47,9 @@ import com.sun.codemodel.JPackage;
 public class FragmentRefIT {
 
     @ClassRule public static Jsonschema2PojoRule classSchemaRule = new Jsonschema2PojoRule();
+    
+    @Rule
+    public TemporaryFolder tmpFolder = new TemporaryFolder();
 
     private static Class<?> fragmentRefsClass;
 
@@ -70,9 +84,10 @@ public class FragmentRefIT {
     public void selfRefWithoutParentFile() throws IOException {
         JCodeModel codeModel = new JCodeModel();
         JsonNode schema = new ObjectMapper().readTree("{\"type\":\"object\", \"properties\":{\"a\":{\"$ref\":\"#/b\"}}, \"b\":\"string\"}");
+        URL schemaUrl = createSchemaUrl(schema);
         
         JPackage p = codeModel._package("com.example");
-        new RuleFactory().getSchemaRule().apply("Example", schema, p, new Schema(null, schema, schema));
+        new RuleFactory().getSchemaRule().apply("Example", schema, p, new Schema(null, schemaUrl, schema, null));
     }
     
     @Test
@@ -100,8 +115,20 @@ public class FragmentRefIT {
         		"    }\n" + 
         		"}");
         
+        URL schemaUrl = createSchemaUrl(schema);
+        
         JPackage p = codeModel._package("com.example");
-        new RuleFactory().getSchemaRule().apply("Example", schema, p, new Schema(null, schema, schema));
+        new RuleFactory().getSchemaRule().apply("Example", schema, p, new Schema(null, schemaUrl, schema, null));
+    }
+
+    private URL createSchemaUrl(JsonNode schema) throws IOException, FileNotFoundException, UnsupportedEncodingException, MalformedURLException {
+        File schemaFile = tmpFolder.newFile();
+        System.out.println(schema.toString());
+        FileOutputStream fout = new FileOutputStream(schemaFile);
+        fout.write(schema.toString().getBytes("UTF-8"));
+        fout.close();
+        URL schemaUrl = schemaFile.toURI().toURL();
+        return schemaUrl;
     }
 
 }

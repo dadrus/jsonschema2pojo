@@ -16,11 +16,20 @@
 
 package org.jsonschema2pojo.rules;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.net.URI;
+
+import org.jsonschema2pojo.GenerationConfig;
+import org.jsonschema2pojo.Schema;
+import org.jsonschema2pojo.util.PackageHelper;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -28,15 +37,12 @@ import org.mockito.Mockito;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-
-import org.jsonschema2pojo.GenerationConfig;
-import org.jsonschema2pojo.Schema;
-
 import com.sun.codemodel.JClass;
 import com.sun.codemodel.JCodeModel;
 import com.sun.codemodel.JDefinedClass;
 import com.sun.codemodel.JPackage;
 import com.sun.codemodel.JType;
+
 
 public class TypeRuleTest {
 
@@ -501,19 +507,25 @@ public class TypeRuleTest {
 
     @Test
     public void applyGeneratesCustomObject() {
-
+        // GIVEN
+        Schema schema = new Schema(URI.create("http://test.com"), null, null, null);
         JPackage jpackage = new JCodeModel()._package(getClass().getPackage().getName());
 
         ObjectNode objectNode = new ObjectMapper().createObjectNode();
         objectNode.put("type", "object");
-
+        
+        PackageHelper packageHelper = mock(PackageHelper.class);
         JDefinedClass mockObjectType = mock(JDefinedClass.class);
         ObjectRule mockObjectRule = mock(ObjectRule.class);
-        when(mockObjectRule.apply("fooBar", objectNode, jpackage, null)).thenReturn(mockObjectType);
+        
+        when(mockObjectRule.apply(eq("fooBar"), eq(objectNode), any(JPackage.class), any(Schema.class))).thenReturn(mockObjectType);
         when(ruleFactory.getObjectRule()).thenReturn(mockObjectRule);
+        when(ruleFactory.getPackageHelper()).thenReturn(packageHelper);
 
-        JType result = rule.apply("fooBar", objectNode, jpackage, null);
+        // WHEN
+        JType result = rule.apply("fooBar", objectNode, jpackage, schema);
 
+        // THEN
         assertThat(result, is((JType) mockObjectType));
     }
 

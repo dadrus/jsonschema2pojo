@@ -16,49 +16,54 @@
 
 package org.jsonschema2pojo;
 
-import static org.apache.commons.lang3.StringUtils.*;
+import static org.apache.commons.lang3.StringUtils.stripEnd;
+import static org.apache.commons.lang3.StringUtils.substringAfter;
+import static org.apache.commons.lang3.StringUtils.substringBefore;
 
 import java.net.URI;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.jsonschema2pojo.util.URLUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
 public class SchemaStore {
 
-    protected Map<URI, Schema> schemas = new HashMap<URI, Schema>();
+    protected Map<URL, Schema> schemas = new HashMap<URL, Schema>();
 
     protected FragmentResolver fragmentResolver = new FragmentResolver();
     protected ContentResolver contentResolver = new ContentResolver();
 
     /**
-     * Create or look up a new schema which has the given ID and read the
-     * contents of the given ID as a URL. If a schema with the given ID is
+     * Create or look up a new schema which has the given reference and read the
+     * contents of the given reference as a URL. If a schema with the given reference is
      * already known, then a reference to the original schema will be returned.
      * 
-     * @param id
-     *            the id of the schema being created
+     * @param reference
+     *            the reference of the schema being created
      * @return a schema object containing the contents of the given path
      */
-    public synchronized Schema create(URI id) {
+    public synchronized Schema create(URI id, URL reference) {
 
-        if (!schemas.containsKey(id)) {
+        if (!schemas.containsKey(reference)) {
 
-            JsonNode content = contentResolver.resolve(removeFragment(id));
+            JsonNode content = contentResolver.resolve(removeFragment(reference));
 
-            if (id.toString().contains("#")) {
-                JsonNode childContent = fragmentResolver.resolve(content, '#' + substringAfter(id.toString(), "#"));
-                schemas.put(id, new Schema(id, childContent, content));
+            if (reference.toString().contains("#")) {
+                JsonNode childContent = fragmentResolver.resolve(content, '#' + substringAfter(reference.toString(), "#"));
+                schemas.put(reference, new Schema(id, reference, childContent, null));
             } else {
-                schemas.put(id, new Schema(id, content, content));
+                schemas.put(reference, new Schema(id, reference, content, null));
             }
         }
 
-        return schemas.get(id);
+        return schemas.get(reference);
     }
 
-    protected URI removeFragment(URI id) {
-        return URI.create(substringBefore(id.toString(), "#"));
+    protected URI removeFragment(URL reference) {
+        return URI.create(substringBefore(reference.toString(), "#"));
     }
 
     /**
@@ -72,7 +77,7 @@ public class SchemaStore {
      * @param path
      *            the relative path of this schema (will be used to create a
      *            complete URI by resolving this path against the parent
-     *            schema's id)
+     *            schema's reference)
      * @return a schema object containing the contents of the given path
      */
     @SuppressWarnings("PMD.UselessParentheses")
@@ -83,20 +88,30 @@ public class SchemaStore {
         }
         
         path = stripEnd(path, "#?&/");
-
-        URI id = (parent == null || parent.getId() == null) ? URI.create(path) : parent.getId().resolve(path);
+        
+        URL url;
+        try {
+            if(parent == null || parent.getUrl() == null) {
+                url = URLUtil.getURL(path);
+            } else {
+                url = URLUtil.resolveURL(parent.getUrl().toURI(), path);
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e);
+        }
 
         if (selfReferenceWithoutParentFile(parent, path)) {
-            schemas.put(id, new Schema(id, fragmentResolver.resolve(parent.getParentContent(), path), parent.getParentContent()));
-            return schemas.get(id);
+            
+            schemas.put(url, new Schema(parent.getId(), url, fragmentResolver.resolve(parent.getContent(), path), parent));
+            return schemas.get(url);
         }
         
-        return create(id);
+        return create(parent.getId(), url);
 
     }
 
     protected boolean selfReferenceWithoutParentFile(Schema parent, String path) {
-        return parent != null && (parent.getId() == null || parent.getId().toString().startsWith("#/")) && path.startsWith("#/");
+        return parent != null && (parent.getUrl() == null || parent.getUrl().toString().startsWith("#/")) && path.startsWith("#/");
     }
 
     public synchronized void clearCache() {

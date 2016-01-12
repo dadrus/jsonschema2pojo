@@ -22,6 +22,7 @@ import org.jsonschema2pojo.GenerationConfig;
 import org.jsonschema2pojo.Jackson2Annotator;
 import org.jsonschema2pojo.SchemaStore;
 import org.jsonschema2pojo.util.NameHelper;
+import org.jsonschema2pojo.util.PackageHelper;
 import org.jsonschema2pojo.util.ParcelableHelper;
 
 import com.sun.codemodel.JClass;
@@ -39,6 +40,7 @@ import com.sun.codemodel.JType;
 public class RuleFactory {
 
     private NameHelper nameHelper;
+    private PackageHelper packageHelper;
     private GenerationConfig generationConfig;
     private Annotator annotator;
     private SchemaStore schemaStore;
@@ -61,6 +63,7 @@ public class RuleFactory {
         this.annotator = annotator;
         this.schemaStore = schemaStore;
         this.nameHelper = new NameHelper(generationConfig);
+        this.packageHelper = new PackageHelper(generationConfig);
     }
 
     /**
@@ -291,6 +294,7 @@ public class RuleFactory {
     public void setGenerationConfig(final GenerationConfig generationConfig) {
         this.generationConfig = generationConfig;
         this.nameHelper = new NameHelper(generationConfig);
+        this.packageHelper = new PackageHelper(generationConfig);
     }
 
     /**
@@ -346,7 +350,11 @@ public class RuleFactory {
     public NameHelper getNameHelper() {
         return nameHelper;
     }
-
+    
+    public PackageHelper getPackageHelper() {
+        return packageHelper;
+    }
+    
     /**
      * Provides a rule instance that should be applied when a "media"
      * declaration is found in the schema.

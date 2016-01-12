@@ -16,17 +16,17 @@
 
 package org.jsonschema2pojo;
 
+import java.io.IOException;
+import java.net.URL;
+
+import org.jsonschema2pojo.rules.RuleFactory;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.codemodel.JCodeModel;
-import com.sun.codemodel.JPackage;
 import com.sun.codemodel.JType;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
-import org.jsonschema2pojo.rules.RuleFactory;
 
 /**
  * Generates Java types from a JSON schema. Can accept a factory which will be
@@ -54,16 +54,6 @@ public class SchemaMapper {
     }
 
     /**
-     * Create a schema mapper with the default {@link RuleFactory}
-     * implementation.
-     * 
-     * @see RuleFactory
-     */
-    public SchemaMapper() {
-        this(new RuleFactory(), new SchemaGenerator());
-    }
-
-    /**
      * Reads a schema and adds generated types to the given code model.
      * 
      * @param codeModel
@@ -79,13 +69,11 @@ public class SchemaMapper {
      * @throws IOException
      *             if the schema content cannot be read
      */
-    public JType generate(JCodeModel codeModel, String className, String packageName, URL schemaUrl) throws IOException {
-
-        JPackage jpackage = codeModel._package(packageName);
-
+    public JType generate(JCodeModel codeModel, String className, URL schemaUrl) throws IOException {
         ObjectNode schemaNode = readSchema(schemaUrl);
-
-        return ruleFactory.getSchemaRule().apply(className, schemaNode, jpackage, new Schema(null, schemaNode, schemaNode));
+        Schema schema = new Schema(null, schemaUrl, schemaNode, null);
+        
+        return ruleFactory.getSchemaRule().apply(className, schemaNode, codeModel.rootPackage(), schema);
 
     }
 
@@ -104,21 +92,7 @@ public class SchemaMapper {
 
     }
 
-    public JType generate(JCodeModel codeModel, String className, String packageName, String json, 
-            URI schemaLocation) throws IOException {
-
-        JPackage jpackage = codeModel._package(packageName);
-
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode schemaNode = mapper.readTree(json);
-
-        return ruleFactory.getSchemaRule().apply(className, schemaNode, jpackage, 
-                new Schema(schemaLocation, schemaNode, schemaNode));
-    }
-
-    public JType generate(JCodeModel codeModel, String className, String packageName, String json) throws IOException {
-
-        JPackage jpackage = codeModel._package(packageName);
+    public JType generate(JCodeModel codeModel, String className, String json) throws IOException {
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode schemaNode = null;
@@ -129,6 +103,6 @@ public class SchemaMapper {
             schemaNode = mapper.readTree(json);
         }
 
-        return ruleFactory.getSchemaRule().apply(className, schemaNode, jpackage, new Schema(null, schemaNode, schemaNode));
+        return ruleFactory.getSchemaRule().apply(className, schemaNode, codeModel.rootPackage(), new Schema(null, null, schemaNode, null));
     }
 }

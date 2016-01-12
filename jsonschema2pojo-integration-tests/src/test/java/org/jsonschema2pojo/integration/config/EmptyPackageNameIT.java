@@ -32,7 +32,7 @@ public class EmptyPackageNameIT {
                 config("includes", new String[] {}, "excludes", new String[] {}));
 
         resultsClassLoader.loadClass("LevelZeroType");
-        resultsClassLoader.loadClass("levelOne.LevelOneType");
-        resultsClassLoader.loadClass("levelOne.levelTwo.LevelTwoType");
+        resultsClassLoader.loadClass("LevelOneType");
+        resultsClassLoader.loadClass("LevelTwoType");
     }
 }

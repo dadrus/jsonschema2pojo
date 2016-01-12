@@ -16,12 +16,16 @@
 
 package org.jsonschema2pojo;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Scanner;
@@ -41,6 +45,8 @@ import com.sun.codemodel.JPackage;
 
 public class SchemaMapperTest {
 
+    private static final String DEFAULT_PACKAGE_NAME = "";
+
     @Test
     public void generateReadsSchemaAsObject() throws IOException {
 
@@ -48,18 +54,20 @@ public class SchemaMapperTest {
 
         final RuleFactory mockRuleFactory = mock(RuleFactory.class);
         when(mockRuleFactory.getSchemaRule()).thenReturn(mockSchemaRule);
-        when(mockRuleFactory.getGenerationConfig()).thenReturn(new DefaultGenerationConfig());
+        GenerationConfig config = spy(new DefaultGenerationConfig());
+        when(config.getTargetPackage()).thenReturn("com.example.package");
+        when(mockRuleFactory.getGenerationConfig()).thenReturn(config);
 
         URL schemaContent = this.getClass().getResource("/schema/address.json");
 
-        new SchemaMapper(mockRuleFactory, new SchemaGenerator()).generate(new JCodeModel(), "Address", "com.example.package", schemaContent);
+        new SchemaMapper(mockRuleFactory, new SchemaGenerator()).generate(new JCodeModel(), "Address", schemaContent);
 
         ArgumentCaptor<JPackage> capturePackage = ArgumentCaptor.forClass(JPackage.class);
         ArgumentCaptor<JsonNode> captureNode = ArgumentCaptor.forClass(JsonNode.class);
 
-        verify(mockSchemaRule).apply(eq("Address"), captureNode.capture(), capturePackage.capture(), Mockito.isA(Schema.class));
+        verify(mockSchemaRule).apply(eq("Address"), captureNode.capture(), capturePackage.capture(), isA(Schema.class));
 
-        assertThat(capturePackage.getValue().name(), is("com.example.package"));
+        assertThat(capturePackage.getValue().name(), is(DEFAULT_PACKAGE_NAME));
         assertThat(captureNode.getValue(), is(notNullValue()));
 
     }
@@ -74,6 +82,7 @@ public class SchemaMapperTest {
         final SchemaRule mockSchemaRule = mock(SchemaRule.class);
 
         final GenerationConfig mockGenerationConfig = mock(GenerationConfig.class);
+        when(mockGenerationConfig.getTargetPackage()).thenReturn("com.example.package");
         when(mockGenerationConfig.getSourceType()).thenReturn(SourceType.JSON);
 
         final SchemaGenerator mockSchemaGenerator = mock(SchemaGenerator.class);
@@ -83,26 +92,27 @@ public class SchemaMapperTest {
         when(mockRuleFactory.getSchemaRule()).thenReturn(mockSchemaRule);
         when(mockRuleFactory.getGenerationConfig()).thenReturn(mockGenerationConfig);
 
-        new SchemaMapper(mockRuleFactory, mockSchemaGenerator).generate(new JCodeModel(), "Address", "com.example.package", schemaContent);
+        new SchemaMapper(mockRuleFactory, mockSchemaGenerator).generate(new JCodeModel(), "Address", schemaContent);
 
         ArgumentCaptor<JPackage> capturePackage = ArgumentCaptor.forClass(JPackage.class);
 
         verify(mockSchemaRule).apply(eq("Address"), eq(schemaNode), capturePackage.capture(), Mockito.isA(Schema.class));
 
-        assertThat(capturePackage.getValue().name(), is("com.example.package"));
+        assertThat(capturePackage.getValue().name(), is(DEFAULT_PACKAGE_NAME));
 
     }
 
     @Test
     public void generateCreatesSchemaFromExampleJSONAsStringInput() throws IOException {
-    	
-    	String jsonContent = new Scanner(this.getClass().getResourceAsStream("/example-json/user.json")).useDelimiter("\\Z").next();
-    	
+
+        String jsonContent = new Scanner(this.getClass().getResourceAsStream("/example-json/user.json")).useDelimiter("\\Z").next();
+
         ObjectNode schemaNode = JsonNodeFactory.instance.objectNode();
 
         final SchemaRule mockSchemaRule = mock(SchemaRule.class);
 
         final GenerationConfig mockGenerationConfig = mock(GenerationConfig.class);
+        when(mockGenerationConfig.getTargetPackage()).thenReturn("com.example.package");
         when(mockGenerationConfig.getSourceType()).thenReturn(SourceType.JSON);
 
         final SchemaGenerator mockSchemaGenerator = mock(SchemaGenerator.class);
@@ -112,35 +122,37 @@ public class SchemaMapperTest {
         when(mockRuleFactory.getSchemaRule()).thenReturn(mockSchemaRule);
         when(mockRuleFactory.getGenerationConfig()).thenReturn(mockGenerationConfig);
 
-        new SchemaMapper(mockRuleFactory, mockSchemaGenerator).generate(new JCodeModel(), "User", "com.example.package", jsonContent);
+        new SchemaMapper(mockRuleFactory, mockSchemaGenerator).generate(new JCodeModel(), "User", jsonContent);
 
         ArgumentCaptor<JPackage> capturePackage = ArgumentCaptor.forClass(JPackage.class);
 
         verify(mockSchemaRule).apply(eq("User"), eq(schemaNode), capturePackage.capture(), Mockito.isA(Schema.class));
 
-        assertThat(capturePackage.getValue().name(), is("com.example.package"));
-	}
-    
+        assertThat(capturePackage.getValue().name(), is(DEFAULT_PACKAGE_NAME));
+    }
+
     @Test
     public void generateCreatesSchemaFromSchemaAsStringInput() throws IOException {
 
-    	String schemaContent = new Scanner(this.getClass().getResourceAsStream("/schema/address.json")).useDelimiter("\\Z").next();
+        String schemaContent = new Scanner(this.getClass().getResourceAsStream("/schema/address.json")).useDelimiter("\\Z").next();
 
         final SchemaRule mockSchemaRule = mock(SchemaRule.class);
 
         final RuleFactory mockRuleFactory = mock(RuleFactory.class);
         when(mockRuleFactory.getSchemaRule()).thenReturn(mockSchemaRule);
-        when(mockRuleFactory.getGenerationConfig()).thenReturn(new DefaultGenerationConfig());
+        GenerationConfig config = spy(new DefaultGenerationConfig());
+        when(config.getTargetPackage()).thenReturn("com.example.package");
+        when(mockRuleFactory.getGenerationConfig()).thenReturn(config);
 
-        new SchemaMapper(mockRuleFactory, new SchemaGenerator()).generate(new JCodeModel(), "Address", "com.example.package", schemaContent);
+        new SchemaMapper(mockRuleFactory, new SchemaGenerator()).generate(new JCodeModel(), "Address", schemaContent);
 
         ArgumentCaptor<JPackage> capturePackage = ArgumentCaptor.forClass(JPackage.class);
         ArgumentCaptor<JsonNode> captureNode = ArgumentCaptor.forClass(JsonNode.class);
 
         verify(mockSchemaRule).apply(eq("Address"), captureNode.capture(), capturePackage.capture(), Mockito.isA(Schema.class));
 
-        assertThat(capturePackage.getValue().name(), is("com.example.package"));
+        assertThat(capturePackage.getValue().name(), is(DEFAULT_PACKAGE_NAME));
         assertThat(captureNode.getValue(), is(notNullValue()));
-        
-	}
+
+    }
 }

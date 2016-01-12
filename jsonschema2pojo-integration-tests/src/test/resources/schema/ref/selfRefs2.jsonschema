@@ -1,5 +1,4 @@
 {
-	"id": "http://test.com",
 	"$schema": "http://json-schema.org/schema#",
 	
 	"definitions": {

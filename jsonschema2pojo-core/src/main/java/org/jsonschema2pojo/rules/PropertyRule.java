@@ -16,12 +16,13 @@
 
 package org.jsonschema2pojo.rules;
 
-import static org.apache.commons.lang3.StringUtils.*;
+import static org.apache.commons.lang3.StringUtils.capitalize;
 
-import java.net.URI;
+import java.net.URL;
 
 import org.apache.commons.io.FilenameUtils;
 import org.jsonschema2pojo.Schema;
+import org.jsonschema2pojo.util.URLUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.codemodel.JBlock;
@@ -131,7 +132,16 @@ public class PropertyRule implements Rule<JDefinedClass, JDefinedClass> {
                 return reference.substring(reference.lastIndexOf('/') + 1);
             } else {
                 // global reference (other file, url whatever)
-                final URI uri = schema == null || schema.getId() == null ? URI.create(reference) : schema.getId().resolve(reference);
+                URL url;
+                try {
+                    if(schema == null || schema.getUrl() == null) {
+                        url = URLUtil.getURL(reference);
+                    } else {
+                        url = URLUtil.resolveURL(schema.getUrl().toURI(), reference);
+                    }
+                } catch (Exception e) {
+                    throw new IllegalArgumentException(e);
+                }
 
                 // TODO: actually this fix is incomplete. The uri may by any valid URL (file, classpath, java, http, etc)
                 // Also same problem exists here. The url may point to a schema with a type name already defined e.g.
@@ -139,7 +149,7 @@ public class PropertyRule implements Rule<JDefinedClass, JDefinedClass> {
                 // Maybe it is worth to require the usage of the "id" element of the json schema and generate package
                 // names based on it. In addition one could introduce configuration options to map these ids to 
                 // java packages.
-                return FilenameUtils.getBaseName(uri.getPath());
+                return FilenameUtils.getBaseName(url.getPath());
             }
         } else {
             return nodeName;

@@ -17,6 +17,7 @@
 package org.jsonschema2pojo;
 
 import java.net.URI;
+import java.net.URL;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.codemodel.JType;
@@ -26,15 +27,17 @@ import com.sun.codemodel.JType;
  */
 public class Schema {
 
-    private final URI id;
+    private final URL url;
+    private URI id;
     private final JsonNode content;
-    private final JsonNode parentContent;
+    private final Schema parent;
     private JType javaType;
 
-    public Schema(URI id, JsonNode content, JsonNode parentContent) {
+    public Schema(URI id, URL url, JsonNode content, Schema parent) {
+        this.url = url;
         this.id = id;
         this.content = content;
-        this.parentContent = parentContent;
+        this.parent = parent;
     }
 
     public JType getJavaType() {
@@ -51,7 +54,14 @@ public class Schema {
         }
     }
 
+    public URL getUrl() {
+        return url;
+    }
+    
     public URI getId() {
+        if(id == null && content.has("id")) {
+            id = URI.create(content.get("id").asText());
+        }
         return id;
     }
 
@@ -59,8 +69,8 @@ public class Schema {
         return content;
     }
 
-    public JsonNode getParentContent() {
-        return parentContent;
+    public Schema getParent() {
+        return parent;
     }
     
     public boolean isGenerated() {

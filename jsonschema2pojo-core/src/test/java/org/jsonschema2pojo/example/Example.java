@@ -48,7 +48,7 @@ public class Example {
         };
 
         SchemaMapper mapper = new SchemaMapper(new RuleFactory(config, new Jackson2Annotator(), new SchemaStore()), new SchemaGenerator());
-        mapper.generate(codeModel, "ClassName", "com.example", source);
+        mapper.generate(codeModel, "ClassName", source);
 
         codeModel.build(new File("output"));
 

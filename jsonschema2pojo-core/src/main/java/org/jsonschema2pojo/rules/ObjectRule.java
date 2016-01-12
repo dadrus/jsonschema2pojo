@@ -16,9 +16,12 @@
 
 package org.jsonschema2pojo.rules;
 
-import static org.apache.commons.lang3.StringUtils.*;
-import static org.jsonschema2pojo.rules.PrimitiveTypes.*;
-import static org.jsonschema2pojo.util.TypeUtil.*;
+import static org.apache.commons.lang3.StringUtils.capitalize;
+import static org.apache.commons.lang3.StringUtils.substringAfter;
+import static org.apache.commons.lang3.StringUtils.substringBefore;
+import static org.jsonschema2pojo.rules.PrimitiveTypes.isPrimitive;
+import static org.jsonschema2pojo.rules.PrimitiveTypes.primitiveType;
+import static org.jsonschema2pojo.util.TypeUtil.resolveType;
 
 import java.io.Serializable;
 import java.lang.reflect.Modifier;
@@ -278,10 +281,14 @@ public class ObjectRule implements Rule<JPackage, JType> {
         JType superType = jPackage.owner().ref(Object.class);
         if (node.has("extends")) {
             String path;
-            if (schema.getId().getFragment() == null) {
-                path = "#extends";
-            } else {
-                path = "#" + schema.getId().getFragment() + "/extends";
+            try {
+                if (schema.getUrl().toURI().getFragment() == null) {
+                    path = "#extends";
+                } else {
+                    path = "#" + schema.getUrl().toURI().getFragment() + "/extends";
+                }
+            } catch (Exception e) {
+                throw new IllegalArgumentException(e);
             }
             Schema superTypeSchema = ruleFactory.getSchemaStore().create(schema, path);
             superType = ruleFactory.getSchemaRule().apply(nodeName + "Parent", node.get("extends"), jPackage, superTypeSchema);
@@ -339,7 +346,8 @@ public class ObjectRule implements Rule<JPackage, JType> {
         }
 
         for (JFieldVar fieldVar : fields.values()) {
-            if( (fieldVar.mods().getValue() & JMod.STATIC) == JMod.STATIC) continue;
+            if ((fieldVar.mods().getValue() & JMod.STATIC) == JMod.STATIC)
+                continue;
             hashCodeBuilderInvocation = hashCodeBuilderInvocation.invoke("append").arg(fieldVar);
         }
 
@@ -403,10 +411,9 @@ public class ObjectRule implements Rule<JPackage, JType> {
         }
 
         for (JFieldVar fieldVar : fields.values()) {
-            if( (fieldVar.mods().getValue() & JMod.STATIC) == JMod.STATIC ) continue;
-            equalsBuilderInvocation = equalsBuilderInvocation.invoke("append")
-                    .arg(fieldVar)
-                    .arg(rhsVar.ref(fieldVar.name()));
+            if ((fieldVar.mods().getValue() & JMod.STATIC) == JMod.STATIC)
+                continue;
+            equalsBuilderInvocation = equalsBuilderInvocation.invoke("append").arg(fieldVar).arg(rhsVar.ref(fieldVar.name()));
         }
 
         JInvocation reflectionEquals = jclass.owner().ref(equalsBuilder).staticInvoke("reflectionEquals");

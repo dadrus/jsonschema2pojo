@@ -16,8 +16,6 @@
 
 package org.jsonschema2pojo;
 
-import static org.apache.commons.lang3.StringUtils.*;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -32,7 +30,6 @@ import java.util.List;
 import org.apache.commons.io.FilenameUtils;
 import org.jsonschema2pojo.exception.GenerationException;
 import org.jsonschema2pojo.rules.RuleFactory;
-import org.jsonschema2pojo.util.NameHelper;
 import org.jsonschema2pojo.util.URLUtil;
 
 import com.sun.codemodel.CodeWriter;
@@ -70,9 +67,9 @@ public class Jsonschema2Pojo {
             URL source = sources.next();
 
             if (URLUtil.parseProtocol(source.toString()) == URLProtocol.FILE && URLUtil.getFileFromURL(source).isDirectory()) {
-                generateRecursive(config, mapper, codeModel, defaultString(config.getTargetPackage()), Arrays.asList(URLUtil.getFileFromURL(source).listFiles(config.getFileFilter())));
+                generateRecursive(config, mapper, codeModel, Arrays.asList(URLUtil.getFileFromURL(source).listFiles(config.getFileFilter())));
             } else {
-                mapper.generate(codeModel, getNodeName(source), defaultString(config.getTargetPackage()), source);
+                mapper.generate(codeModel, getNodeName(source), source);
             }
         }
 
@@ -101,21 +98,16 @@ public class Jsonschema2Pojo {
         }
     }
 
-    private static void generateRecursive(GenerationConfig config, SchemaMapper mapper, JCodeModel codeModel, String packageName, List<File> schemaFiles) throws IOException {
+    private static void generateRecursive(GenerationConfig config, SchemaMapper mapper, JCodeModel codeModel, List<File> schemaFiles) throws IOException {
         Collections.sort(schemaFiles);
 
         for (File child : schemaFiles) {
             if (child.isFile()) {
-                mapper.generate(codeModel, getNodeName(child.toURI().toURL()), defaultString(packageName), child.toURI().toURL());
+                mapper.generate(codeModel, getNodeName(child.toURI().toURL()), child.toURI().toURL());
             } else {
-                generateRecursive(config, mapper, codeModel, childQualifiedName(packageName, child.getName()), Arrays.asList(child.listFiles(config.getFileFilter())));
+                generateRecursive(config, mapper, codeModel, Arrays.asList(child.listFiles(config.getFileFilter())));
             }
         }
-    }
-
-    private static String childQualifiedName(String parentQualifiedName, String childSimpleName) {
-        String safeChildName = childSimpleName.replaceAll(NameHelper.ILLEGAL_CHARACTER_REGEX, "_");
-        return isEmpty(parentQualifiedName) ? safeChildName : parentQualifiedName + "." + safeChildName;
     }
 
     private static void removeOldOutput(File targetDirectory) {

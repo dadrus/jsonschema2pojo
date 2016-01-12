@@ -16,15 +16,21 @@
 
 package org.jsonschema2pojo.integration.ref;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.net.URL;
 
+import org.jsonschema2pojo.DefaultGenerationConfig;
+import org.jsonschema2pojo.GenerationConfig;
+import org.jsonschema2pojo.SchemaGenerator;
 import org.jsonschema2pojo.SchemaMapper;
 import org.jsonschema2pojo.integration.util.CodeGenerationHelper;
 import org.jsonschema2pojo.integration.util.Jsonschema2PojoRule;
+import org.jsonschema2pojo.rules.RuleFactory;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -37,11 +43,20 @@ public class ExtRefIT {
     
     @Test
     public void multipleExternalReferencesToDifferentTypes()  throws NoSuchMethodException, ClassNotFoundException, IOException {
+        String targetPackageName = "com.example";
         URL schemaUrl = CodeGenerationHelper.class.getResource("/schema/ref/refsToExt.jsonschema");
         JCodeModel codeModel = new JCodeModel();
         
+        RuleFactory ruleFactory = new RuleFactory();
+        GenerationConfig config = spy(new DefaultGenerationConfig());
+        when(config.getTargetPackage()).thenReturn(targetPackageName);
+        
+        ruleFactory.setGenerationConfig(config);
+
+        SchemaMapper mapper = new SchemaMapper(ruleFactory, new SchemaGenerator());
+        
         // NOTE: using generate with last argument being the loaded json schema contents (String) will make this test fail!!!!
-        new SchemaMapper().generate(codeModel, "RefsToExt", "com.example", schemaUrl);
+        mapper.generate(codeModel, "RefsToExt", schemaUrl);
 
         codeModel.build(schemaRule.getGenerateDir());
 

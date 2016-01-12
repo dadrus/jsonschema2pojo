@@ -16,22 +16,25 @@
 
 package org.jsonschema2pojo.rules;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import java.net.URI;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.Test;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jsonschema2pojo.GenerationConfig;
 import org.jsonschema2pojo.NoopAnnotator;
 import org.jsonschema2pojo.Schema;
 import org.jsonschema2pojo.SchemaStore;
+import org.junit.Test;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.codemodel.JClass;
 import com.sun.codemodel.JCodeModel;
 import com.sun.codemodel.JPackage;
@@ -63,7 +66,7 @@ public class ArrayRuleTest {
     }
 
     @Test
-    public void arrayWithNonUniqueItemsProducesList() {
+    public void arrayWithNonUniqueItemsProducesList() throws MalformedURLException {
         JCodeModel codeModel = new JCodeModel();
         JPackage jpackage = codeModel._package(getClass().getPackage().getName());
 
@@ -77,7 +80,7 @@ public class ArrayRuleTest {
         propertyNode.put("items", itemsNode);
 
         Schema schema = mock(Schema.class);
-        when(schema.getId()).thenReturn(URI.create("http://example/nonUniqueArray"));
+        when(schema.getUrl()).thenReturn(new URL("http://example/nonUniqueArray"));
         when(config.isUseDoubleNumbers()).thenReturn(true);
 
         JClass propertyType = rule.apply("fooBars", propertyNode, jpackage, schema);
@@ -88,7 +91,7 @@ public class ArrayRuleTest {
     }
 
     @Test
-    public void arrayOfPrimitivesProducesCollectionOfWrapperTypes() {
+    public void arrayOfPrimitivesProducesCollectionOfWrapperTypes() throws MalformedURLException {
         JCodeModel codeModel = new JCodeModel();
         JPackage jpackage = codeModel._package(getClass().getPackage().getName());
 
@@ -102,7 +105,7 @@ public class ArrayRuleTest {
         propertyNode.put("items", itemsNode);
 
         Schema schema = mock(Schema.class);
-        when(schema.getId()).thenReturn(URI.create("http://example/nonUniqueArray"));
+        when(schema.getUrl()).thenReturn(new URL("http://example/nonUniqueArray"));
         when(config.isUsePrimitives()).thenReturn(true);
         when(config.isUseDoubleNumbers()).thenReturn(true);
 
@@ -114,7 +117,7 @@ public class ArrayRuleTest {
     }
 
     @Test
-    public void arrayDefaultsToNonUnique() {
+    public void arrayDefaultsToNonUnique() throws MalformedURLException {
         JCodeModel codeModel = new JCodeModel();
         JPackage jpackage = codeModel._package(getClass().getPackage().getName());
 
@@ -128,7 +131,7 @@ public class ArrayRuleTest {
         propertyNode.put("items", itemsNode);
 
         Schema schema = mock(Schema.class);
-        when(schema.getId()).thenReturn(URI.create("http://example/defaultArray"));
+        when(schema.getUrl()).thenReturn(new URL("http://example/defaultArray"));
 
         JClass propertyType = rule.apply("fooBars", propertyNode, jpackage, schema);
 
