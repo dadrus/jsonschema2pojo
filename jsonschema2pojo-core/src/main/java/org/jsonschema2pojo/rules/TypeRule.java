@@ -16,8 +16,9 @@
 
 package org.jsonschema2pojo.rules;
 
-import static org.apache.commons.lang3.StringUtils.*;
-import static org.jsonschema2pojo.rules.PrimitiveTypes.*;
+import static org.apache.commons.lang3.StringUtils.defaultString;
+import static org.jsonschema2pojo.rules.PrimitiveTypes.isPrimitive;
+import static org.jsonschema2pojo.rules.PrimitiveTypes.primitiveType;
 
 import java.net.URI;
 import java.util.Iterator;
@@ -95,8 +96,12 @@ public class TypeRule implements Rule<JClassContainer, JType> {
             }
             type = ruleFactory.getEnumRule().apply(nodeName, node, enumContainer, schema);
         } else if (propertyTypeName.equals("object") || (node.has("properties") && node.path("properties").size() > 0)) {
-            JPackage jpackage = createPackage(jClassContainer.owner(), schema, defaultString(ruleFactory.getGenerationConfig().getTargetPackage()));
-            type = ruleFactory.getObjectRule().apply(nodeName, node, jpackage, schema);
+            JClassContainer typeContainer = jClassContainer;
+            if(schema.getJavaType() == null) {
+                // this class is defined outside of a type definition of an object, thus it represents its own type
+                typeContainer = createPackage(jClassContainer.owner(), schema, defaultString(ruleFactory.getGenerationConfig().getTargetPackage()));
+            }
+            type = ruleFactory.getObjectRule().apply(nodeName, node, typeContainer, schema);
         } else if (node.has("javaType")) {
 
             type = getJavaType(node.path("javaType").asText(), jClassContainer.owner());
