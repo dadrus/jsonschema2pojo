@@ -16,11 +16,16 @@
 
 package org.jsonschema2pojo.rules;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.sun.codemodel.*;
+import java.util.Iterator;
+
 import org.jsonschema2pojo.Schema;
 
-import java.util.Iterator;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.sun.codemodel.JBlock;
+import com.sun.codemodel.JDefinedClass;
+import com.sun.codemodel.JExpr;
+import com.sun.codemodel.JMethod;
+import com.sun.codemodel.JVar;
 
 /**
  * Applies the "properties" schema rule.
@@ -57,7 +62,11 @@ public class PropertiesRule implements Rule<JDefinedClass, JDefinedClass> {
         for (Iterator<String> properties = node.fieldNames(); properties.hasNext(); ) {
             String property = properties.next();
 
-            ruleFactory.getPropertyRule().apply(property, node.get(property), jclass, schema);
+            if(property.equals("oneOf")) {
+                ruleFactory.getOneOfRule().apply(property, node.get(property), jclass, schema);
+            } else {
+                ruleFactory.getPropertyRule().apply(property, node.get(property), jclass, schema);
+            }
         }
 
         if (ruleFactory.getGenerationConfig().isGenerateBuilders()) {
@@ -78,12 +87,28 @@ public class PropertiesRule implements Rule<JDefinedClass, JDefinedClass> {
 
         for (JMethod parentJMethod : parentJclass.methods()) {
             if (parentJMethod.name().startsWith("with") && parentJMethod.params().size() == 1) {
-                addOverrideBuilder(jclass, parentJMethod, parentJMethod.params().get(0));
+                JVar params  = parentJMethod.params().get(0);
+                if(!isMethodDefined(jclass, parentJMethod, params)) {
+                    addOverrideBuilder(jclass, parentJMethod, params);
+                }
             }
         }
     }
 
+    private boolean isMethodDefined(JDefinedClass jclass, JMethod parentJMethod, JVar parentParams) {
+        for(JMethod method : jclass.methods()) {
+            if(method.name().equals(parentJMethod.name()) && method.params().size() == parentJMethod.params().size()) {
+                JVar params  = method.params().get(0);
+                if(params.type().binaryName().equals(parentParams.type().binaryName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private JMethod addOverrideBuilder(JDefinedClass thisJDefinedClass, JMethod parentBuilder, JVar parentParam) {
+        
         JMethod builder = thisJDefinedClass.method(parentBuilder.mods().getValue(), thisJDefinedClass, parentBuilder.name());
         builder.annotate(Override.class);
 
