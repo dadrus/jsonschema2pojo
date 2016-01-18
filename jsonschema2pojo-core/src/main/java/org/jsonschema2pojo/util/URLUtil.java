@@ -23,8 +23,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jsonschema2pojo.URLProtocol;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 public final class URLUtil {
 
@@ -119,5 +122,43 @@ public final class URLUtil {
     public static URL resolveURL(URI baseUri, String fragment) throws FileNotFoundException {
         URI uri = baseUri.resolve(fragment);
         return getURL(uri.toString());
+    }
+    
+    public static String getSchemaName(URL baseUrl, JsonNode node) {
+        if (node.has("$ref")) {
+            final String reference = node.get("$ref").asText();
+
+            if (reference.startsWith("#/")) {
+                // self reference with type definition
+                // use the name of the type
+
+                // TODO: what about nested references? How to handle them: e.g: "$ref": "#/definitions/level/sublevel/actual_element"
+                // with type information available only on actual_element and level/sublevel used as namespaces to avoid type conflicts
+                // e.g. level could also contain an actual_element definition which differs from the sublevel/actual_element.
+                // Maybe it is worth to generate java subpackages for such cases if the id is not present. 
+                return reference.substring(reference.lastIndexOf('/') + 1);
+            } else {
+                // global reference (other file, absolute url to same file, url, whatever)
+                try {
+                    URL url = (baseUrl == null ? getURL(reference) : resolveURL(baseUrl.toURI(), reference));
+                    
+                    String fragment = (url.toURI().getFragment() == null ? "" : url.toURI().getFragment());
+
+                    if (fragment.isEmpty()) {
+                        // the type name is given by the file name
+                        return FilenameUtils.getBaseName(url.getPath());
+                    } else {
+                        // the type name is defined by the fragment
+                        return fragment.contains("/") ? 
+                        StringUtils.substringAfterLast(fragment, "/") : fragment;
+                    }
+                } catch (Exception e) {
+                    throw new IllegalArgumentException(e);
+                }
+            }
+        } else {
+            // schema does not have a name
+            return null;
+        }
     }
 }
