@@ -16,9 +16,16 @@
 
 package org.jsonschema2pojo.rules;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.jsonschema2pojo.Schema;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.codemodel.JClassContainer;
 import com.sun.codemodel.JType;
 
@@ -67,9 +74,37 @@ public class SchemaRule implements Rule<JClassContainer, JType> {
             return apply(nodeName, schemaNode, generatableType, schema);
         }
         
-        JType javaType = ruleFactory.getTypeRule().apply(nodeName, schemaNode, generatableType, schema);
-        schema.setJavaTypeIfEmpty(javaType);
-
-        return javaType;
+        if(schemaNode.has("type") || schemaNode.size() == 0) {
+            JType javaType = ruleFactory.getTypeRule().apply(nodeName, schemaNode, generatableType, schema);
+            schema.setJavaTypeIfEmpty(javaType);
+    
+            return javaType;
+        } else {
+            // this can only be the entry point for the type generation. Because of this
+            // returning null is safe
+            Map<String, JsonNode> typeDefinitions = collectTypeDefinitions(schemaNode);
+            for(Entry<String, JsonNode> entry : typeDefinitions.entrySet()) {
+                ObjectNode node = JsonNodeFactory.instance.objectNode();
+                node.put("$ref", schema.getUrl().toString() + "#/" + entry.getKey());
+                
+                apply(entry.getKey(), node, generatableType, schema);
+            }
+            return null;
+        }
     }
+
+    private Map<String, JsonNode> collectTypeDefinitions(JsonNode schemaNode) {
+        Map<String, JsonNode> typeDefinitions = new HashMap<String, JsonNode>();
+        Iterator<Entry<String, JsonNode>> it3 = schemaNode.fields();
+        while(it3.hasNext()) {
+            Entry<String, JsonNode> entry = it3.next();
+            JsonNode node = entry.getValue();
+            if(node.has("type")) {
+                typeDefinitions.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return typeDefinitions;
+    }
+
+
 }
