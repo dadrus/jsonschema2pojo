@@ -121,7 +121,7 @@ public class RuleFactory {
      * 
      * @return a schema rule that can handle the "object" declaration.
      */
-    public Rule<JPackage, JType> getObjectRule() {
+    public Rule<JClassContainer, JType> getObjectRule() {
         return new ObjectRule(this, new ParcelableHelper());
     }
 
@@ -371,6 +371,10 @@ public class RuleFactory {
      */
     public Rule<JDefinedClass, JDefinedClass> getDynamicPropertiesRule() {
         return new DynamicPropertiesRule(this);
+    }
+
+    public Rule<JDefinedClass, JDefinedClass> getOneOfRule() {
+        return new OneOfRule(this);
     }
 
 }

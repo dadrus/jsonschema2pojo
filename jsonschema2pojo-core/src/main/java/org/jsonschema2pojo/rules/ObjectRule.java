@@ -25,6 +25,8 @@ import static org.jsonschema2pojo.util.TypeUtil.resolveType;
 
 import java.io.Serializable;
 import java.lang.reflect.Modifier;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -32,6 +34,8 @@ import java.util.Map;
 
 import javax.annotation.Generated;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jsonschema2pojo.AnnotationStyle;
 import org.jsonschema2pojo.Schema;
 import org.jsonschema2pojo.SchemaMapper;
@@ -47,13 +51,13 @@ import com.sun.codemodel.JAnnotationUse;
 import com.sun.codemodel.JBlock;
 import com.sun.codemodel.JClass;
 import com.sun.codemodel.JClassAlreadyExistsException;
+import com.sun.codemodel.JClassContainer;
 import com.sun.codemodel.JDefinedClass;
 import com.sun.codemodel.JExpr;
 import com.sun.codemodel.JFieldVar;
 import com.sun.codemodel.JInvocation;
 import com.sun.codemodel.JMethod;
 import com.sun.codemodel.JMod;
-import com.sun.codemodel.JPackage;
 import com.sun.codemodel.JType;
 import com.sun.codemodel.JVar;
 
@@ -66,7 +70,7 @@ import android.os.Parcelable;
  *      "http://tools.ietf.org/html/draft-zyp-json-schema-03#section-5.1">http:/
  *      /tools.ietf.org/html/draft-zyp-json-schema-03#section-5.1</a>
  */
-public class ObjectRule implements Rule<JPackage, JType> {
+public class ObjectRule implements Rule<JClassContainer, JType> {
 
     private final RuleFactory ruleFactory;
     private final ParcelableHelper parcelableHelper;
@@ -89,9 +93,9 @@ public class ObjectRule implements Rule<JPackage, JType> {
      * {@link Serializable}.
      */
     @Override
-    public JType apply(String nodeName, JsonNode node, JPackage _package, Schema schema) {
+    public JType apply(String nodeName, JsonNode node, JClassContainer classContainer, Schema schema) {
 
-        JType superType = getSuperType(nodeName, node, _package, schema);
+        JType superType = getSuperType(nodeName, node, classContainer, schema);
 
         if (superType.isPrimitive() || isFinal(superType)) {
             return superType;
@@ -99,7 +103,7 @@ public class ObjectRule implements Rule<JPackage, JType> {
 
         JDefinedClass jclass;
         try {
-            jclass = createClass(nodeName, node, _package);
+            jclass = createClass(nodeName, node, classContainer);
         } catch (ClassAlreadyExistsException e) {
             return e.getExistingClass();
         }
@@ -108,7 +112,7 @@ public class ObjectRule implements Rule<JPackage, JType> {
 
         schema.setJavaTypeIfEmpty(jclass);
         addGeneratedAnnotation(jclass);
-
+        
         if (node.has("deserializationClassProperty")) {
             addJsonTypeInfoAnnotation(jclass, node);
         }
@@ -208,16 +212,16 @@ public class ObjectRule implements Rule<JPackage, JType> {
      *            new class. This node may include a 'javaType' property which
      *            if present will override the fully qualified name of the newly
      *            generated class.
-     * @param _package
-     *            the package which may contain a new class after this method
-     *            call
+     * @param jClassContainer
+     *            the container (class, package) which may contain a new class
+     *            after this method call
      * @return a reference to a newly created class
      * @throws ClassAlreadyExistsException
      *             if the given arguments cause an attempt to create a class
      *             that already exists, either on the classpath or in the
      *             current map of classes to be generated.
      */
-    private JDefinedClass createClass(String nodeName, JsonNode node, JPackage _package) throws ClassAlreadyExistsException {
+    private JDefinedClass createClass(String nodeName, JsonNode node, JClassContainer jClassContainer) throws ClassAlreadyExistsException {
 
         JDefinedClass newType;
 
@@ -226,8 +230,8 @@ public class ObjectRule implements Rule<JPackage, JType> {
             if (node.has("javaType")) {
                 String fqn = substringBefore(node.get("javaType").asText(), "<");
 
-                if (isPrimitive(fqn, _package.owner())) {
-                    throw new ClassAlreadyExistsException(primitiveType(fqn, _package.owner()));
+                if (isPrimitive(fqn, jClassContainer.owner())) {
+                    throw new ClassAlreadyExistsException(primitiveType(fqn, jClassContainer.owner()));
                 }
 
                 int index = fqn.lastIndexOf(".") + 1;
@@ -236,22 +240,31 @@ public class ObjectRule implements Rule<JPackage, JType> {
                 }
 
                 try {
-                    _package.owner().ref(Thread.currentThread().getContextClassLoader().loadClass(fqn));
-                    JClass existingClass = TypeUtil.resolveType(_package, fqn + (node.get("javaType").asText().contains("<") ? "<" + substringAfter(node.get("javaType").asText(), "<") : ""));
+                    jClassContainer.owner().ref(Thread.currentThread().getContextClassLoader().loadClass(fqn));
+                    JClass existingClass = TypeUtil.resolveType(jClassContainer, fqn + (node.get("javaType").asText().contains("<") ? "<" + substringAfter(node.get("javaType").asText(), "<") : ""));
 
                     throw new ClassAlreadyExistsException(existingClass);
                 } catch (ClassNotFoundException e) {
                     if (usePolymorphicDeserialization) {
-                        newType = _package.owner()._class(JMod.PUBLIC, fqn, ClassType.CLASS);
+                        newType = jClassContainer.owner()._class(JMod.PUBLIC, fqn, ClassType.CLASS);
                     } else {
-                        newType = _package.owner()._class(fqn);
+                        newType = jClassContainer.owner()._class(fqn);
                     }
                 }
             } else {
+                int mods = JMod.PUBLIC;
+                if(jClassContainer.isClass()) {
+                    // the generated lass should be static
+                    mods |= JMod.STATIC;
+                }
+                
+                // NOTE: the following if block makes no sense. Both JPackage and JDefinedClass
+                // implementations just delegate the _class(name) to _class(mods, name) and the last one
+                // to _class(mods, name, classType)
                 if (usePolymorphicDeserialization) {
-                    newType = _package._class(JMod.PUBLIC, getClassName(nodeName, _package), ClassType.CLASS);
+                    newType = jClassContainer._class(mods, getClassName(nodeName, jClassContainer), ClassType.CLASS);
                 } else {
-                    newType = _package._class(getClassName(nodeName, _package));
+                    newType = jClassContainer._class(mods, getClassName(nodeName, jClassContainer));
                 }
             }
         } catch (JClassAlreadyExistsException e) {
@@ -273,30 +286,73 @@ public class ObjectRule implements Rule<JPackage, JType> {
         }
     }
 
-    private JType getSuperType(String nodeName, JsonNode node, JPackage jPackage, Schema schema) {
+    private JType getSuperType(String nodeName, JsonNode node, JClassContainer jClassContainer, Schema schema) {
         if (node.has("extends") && node.has("extendsJavaClass")) {
             throw new IllegalStateException("'extends' and 'extendsJavaClass' defined simultaneously");
         }
 
-        JType superType = jPackage.owner().ref(Object.class);
+        JType superType = jClassContainer.owner().ref(Object.class);
         if (node.has("extends")) {
-            String path;
-            try {
-                if (schema.getUrl().toURI().getFragment() == null) {
-                    path = "#extends";
-                } else {
-                    path = "#" + schema.getUrl().toURI().getFragment() + "/extends";
-                }
-            } catch (Exception e) {
-                throw new IllegalArgumentException(e);
-            }
-            Schema superTypeSchema = ruleFactory.getSchemaStore().create(schema, path);
-            superType = ruleFactory.getSchemaRule().apply(nodeName + "Parent", node.get("extends"), jPackage, superTypeSchema);
+            JsonNode superTypeNode = node.get("extends");
+            String superTypeSchemaPath = getSuperTypeSchemaPath(schema.getUrl(), superTypeNode);
+            Schema superTypeSchema = ruleFactory.getSchemaStore().create(schema, superTypeSchemaPath);
+            String superTypeName = resolveTypeName(superTypeSchema.getUrl(), schema.getUrl(), nodeName + "Parent");
+            superType = ruleFactory.getSchemaRule().apply(superTypeName, superTypeNode, jClassContainer, superTypeSchema);
         } else if (node.has("extendsJavaClass")) {
-            superType = resolveType(jPackage, node.get("extendsJavaClass").asText());
+            superType = resolveType(jClassContainer, node.get("extendsJavaClass").asText());
         }
 
         return superType;
+    }
+
+    private String resolveTypeName(URL superTypeSchemaUrl, URL currentTypeSchemaUrl, String defaultName) {
+
+        try {
+            // super type was either defined in the actual file (check the fragment) or
+            // in an other file (check the fragment as well)
+            URI superUri = superTypeSchemaUrl.toURI();
+            URI currentUri = currentTypeSchemaUrl.toURI();
+
+            String superPath = superUri.getPath();
+            String superFragment = (superUri.getFragment() == null ? "" : superUri.getFragment());
+            String currentPath = superUri.getPath();
+            String currentFragment = (currentUri.getFragment() == null ? "" : currentUri.getFragment());
+
+            if (superPath.equals(currentPath)) {
+                // super type schema is defined in the same file
+                if (superFragment.startsWith(currentFragment)) {
+                    // super type schema is defined in place
+                    return defaultName;
+                } else {
+                    return StringUtils.substringAfterLast(superFragment, "/");
+                }
+            } else {
+                // super type schema is defined in the different file
+                if (!superFragment.isEmpty()) {
+                    return StringUtils.substringAfterLast(superFragment, "/");
+                } else {
+                    // use file name
+                    return FilenameUtils.getBaseName(superTypeSchemaUrl.getPath());
+                }
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    private String getSuperTypeSchemaPath(URL schemaUrl, JsonNode superTypeNode) {
+        if (superTypeNode.has("$ref")) {
+            // the super type is defined somewhere else
+            return superTypeNode.get("$ref").asText();
+        } else {
+            // the super type is defined in place
+            try {
+                String fragment = schemaUrl.toURI().getFragment();
+                return (fragment == null ? "#/extends" : "#" + fragment + "/extends");
+            } catch (Exception e) {
+                throw new IllegalArgumentException(e);
+            }
+        }
     }
 
     private void addGeneratedAnnotation(JDefinedClass jclass) {
@@ -431,7 +487,7 @@ public class ObjectRule implements Rule<JPackage, JType> {
         }
     }
 
-    private String getClassName(String nodeName, JPackage _package) {
+    private String getClassName(String nodeName, JClassContainer jClassContainer) {
         String prefix = ruleFactory.getGenerationConfig().getClassNamePrefix();
         String suffix = ruleFactory.getGenerationConfig().getClassNameSuffix();
         String capitalizedNodeName = capitalize(nodeName);
@@ -439,7 +495,7 @@ public class ObjectRule implements Rule<JPackage, JType> {
 
         String className = ruleFactory.getNameHelper().replaceIllegalCharacters(fullNodeName);
         String normalizedName = ruleFactory.getNameHelper().normalizeName(className);
-        return makeUnique(normalizedName, _package);
+        return makeUnique(normalizedName, jClassContainer);
     }
 
     private String createFullNodeName(String nodeName, String prefix, String suffix) {
@@ -455,14 +511,23 @@ public class ObjectRule implements Rule<JPackage, JType> {
         return returnString;
     }
 
-    private String makeUnique(String className, JPackage _package) {
-        try {
-            JDefinedClass _class = _package._class(className);
-            _package.remove(_class);
+    private String makeUnique(String className, JClassContainer jClassContainer) {
+        if(!isClassDefined(className, jClassContainer)) {
             return className;
-        } catch (JClassAlreadyExistsException e) {
-            return makeUnique(className + "_", _package);
+        } else {
+            return makeUnique(className + "_", jClassContainer);
         }
+    }
+
+    private boolean isClassDefined(String className, JClassContainer jClassContainer) {
+        Iterator<JDefinedClass> it = jClassContainer.classes();
+        while(it.hasNext()) {
+            JDefinedClass definedClass = it.next();
+            if(className.equals(definedClass.name())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean usesPolymorphicDeserialization(JsonNode node) {
