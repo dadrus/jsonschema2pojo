@@ -17,7 +17,7 @@
 package org.jsonschema2pojo.maven;
 
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
-import static org.apache.commons.lang3.StringUtils.*;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -578,12 +578,24 @@ public class Jsonschema2PojoMojo extends AbstractMojo implements GenerationConfi
 
     @Override
     public Iterator<URL> getSource() {
-        if (null != sourceDirectory) {
-            return Collections.singleton(URLUtil.parseURL(sourceDirectory)).iterator();
+        if (sourceDirectory != null) {
+            File dir = new File(sourceDirectory);
+            if(dir.exists()) {
+                try {
+                    return Collections.singleton(URLUtil.parseURL(dir.getCanonicalPath())).iterator();
+                } catch (IOException e) {
+                }
+            }
         }
         List<URL> sourceURLs = new ArrayList<URL>();
         for (String source : sourcePaths) {
-            sourceURLs.add(URLUtil.parseURL(source));
+            File sourceFile = new File(source);
+            if(sourceFile.exists()) {
+                try {
+                    sourceURLs.add(URLUtil.parseURL(sourceFile.getCanonicalPath()));
+                } catch (IOException e) {
+                }
+            }
         }
         return sourceURLs.iterator();
     }
