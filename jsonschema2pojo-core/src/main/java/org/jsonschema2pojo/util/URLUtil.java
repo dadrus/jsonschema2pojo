@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 
 import org.apache.commons.io.FilenameUtils;
@@ -42,19 +41,19 @@ public final class URLUtil {
         try {
             switch (parseProtocol(input)) {
                 case NO_PROTOCOL:
-                    return new File(input).toURI().toURL();
+                    return new File(input).getCanonicalFile().toURI().toURL();
                 default:
                     return URI.create(input).toURL();
             }
-        } catch (MalformedURLException e) {
+        } catch (Exception e) {
             throw new IllegalArgumentException(String.format("Unable to parse source: %s", input), e);
         }
     }
 
     public static File getFileFromURL(URL url) {
         try {
-            return new File(url.toURI());
-        } catch (URISyntaxException e) {
+            return new File(url.toURI()).getCanonicalFile();
+        } catch (Exception e) {
             throw new IllegalArgumentException(String.format("URL contains an invalid URI syntax: %s", url), e);
         }
     }
