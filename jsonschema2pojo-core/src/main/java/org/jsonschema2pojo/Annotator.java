@@ -157,4 +157,6 @@ public interface Annotator {
     boolean isAdditionalPropertiesSupported();
 
     void additionalPropertiesField(JFieldVar field, JDefinedClass clazz, String propertyName);
+
+    void setBindingResolver(BindingResolver bindingResolver);
 }

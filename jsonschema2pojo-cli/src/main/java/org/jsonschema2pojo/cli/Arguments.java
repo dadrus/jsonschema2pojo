@@ -16,7 +16,7 @@
 
 package org.jsonschema2pojo.cli;
 
-import static org.apache.commons.lang3.StringUtils.*;
+import static org.apache.commons.lang3.StringUtils.defaultString;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -33,6 +33,7 @@ import org.jsonschema2pojo.Annotator;
 import org.jsonschema2pojo.GenerationConfig;
 import org.jsonschema2pojo.NoopAnnotator;
 import org.jsonschema2pojo.SourceType;
+import org.jsonschema2pojo.TypeBinding;
 import org.jsonschema2pojo.rules.RuleFactory;
 
 import com.beust.jcommander.JCommander;
@@ -367,6 +368,11 @@ public class Arguments implements GenerationConfig {
     @Override
     public Map<URI, String> getIdMappings() {
         return Collections.emptyMap();
+    }
+
+    @Override
+    public List<TypeBinding> getTypeBindings() {
+        return Collections.emptyList();
     }
 
 }

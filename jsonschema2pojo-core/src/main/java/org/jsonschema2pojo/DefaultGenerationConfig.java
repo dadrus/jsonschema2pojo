@@ -20,9 +20,9 @@ import java.io.File;
 import java.io.FileFilter;
 import java.net.URI;
 import java.net.URL;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.jsonschema2pojo.rules.RuleFactory;
@@ -294,5 +294,10 @@ public class DefaultGenerationConfig implements GenerationConfig {
     @Override
     public Map<URI, String> getIdMappings() {
         return Collections.emptyMap();
+    }
+
+    @Override
+    public List<TypeBinding> getTypeBindings() {
+        return Collections.emptyList();
     }
 }

@@ -43,6 +43,7 @@ import org.jsonschema2pojo.GenerationConfig;
 import org.jsonschema2pojo.Jsonschema2Pojo;
 import org.jsonschema2pojo.NoopAnnotator;
 import org.jsonschema2pojo.SourceType;
+import org.jsonschema2pojo.TypeBinding;
 import org.jsonschema2pojo.rules.RuleFactory;
 import org.jsonschema2pojo.util.URLUtil;
 
@@ -475,6 +476,13 @@ public class Jsonschema2PojoMojo extends AbstractMojo implements GenerationConfi
      * @parameter expression="${jsonschema2pojo.idMapping}"
      */
     private List<IdMapping> idMappings = Collections.emptyList();
+    
+    /**
+     * The binding for json types to java types using a specific type adapter.
+     * 
+     * @parameter expression="${jsonschema2pojo.idMapping}"
+     */
+    private List<TypeBinding> typeBindings = Collections.emptyList();
 
     private FileFilter fileFilter = new AllFileFilter();
 
@@ -798,6 +806,11 @@ public class Jsonschema2PojoMojo extends AbstractMojo implements GenerationConfi
             mappings.put(idMapping.getId(), idMapping.getPackageName());
         }
         return mappings;
+    }
+
+    @Override
+    public List<TypeBinding> getTypeBindings() {
+        return typeBindings;
     }
 
 }

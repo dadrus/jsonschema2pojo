@@ -17,6 +17,7 @@
 package org.jsonschema2pojo.rules;
 
 import org.jsonschema2pojo.Annotator;
+import org.jsonschema2pojo.BindingResolver;
 import org.jsonschema2pojo.DefaultGenerationConfig;
 import org.jsonschema2pojo.GenerationConfig;
 import org.jsonschema2pojo.Jackson2Annotator;
@@ -44,6 +45,7 @@ public class RuleFactory {
     private GenerationConfig generationConfig;
     private Annotator annotator;
     private SchemaStore schemaStore;
+    private BindingResolver bindingResolver;
 
     /**
      * Create a new rule factory with the given generation config options.
@@ -64,6 +66,7 @@ public class RuleFactory {
         this.schemaStore = schemaStore;
         this.nameHelper = new NameHelper(generationConfig);
         this.packageHelper = new PackageHelper(generationConfig);
+        this.bindingResolver = new BindingResolver(generationConfig);
     }
 
     /**
@@ -295,6 +298,7 @@ public class RuleFactory {
         this.generationConfig = generationConfig;
         this.nameHelper = new NameHelper(generationConfig);
         this.packageHelper = new PackageHelper(generationConfig);
+        this.bindingResolver = new BindingResolver(generationConfig);
     }
 
     /**
@@ -375,6 +379,10 @@ public class RuleFactory {
 
     public Rule<JDefinedClass, JDefinedClass> getOneOfRule() {
         return new OneOfRule(this);
+    }
+
+    public BindingResolver getBindingResolver() {
+        return bindingResolver;
     }
 
 }

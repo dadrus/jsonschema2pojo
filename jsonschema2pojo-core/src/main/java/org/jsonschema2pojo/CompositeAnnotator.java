@@ -130,4 +130,11 @@ public class CompositeAnnotator implements Annotator {
         }
     }
 
+    @Override
+    public void setBindingResolver(BindingResolver bindingResolver) {
+        for (Annotator annotator : annotators) {
+            annotator.setBindingResolver(bindingResolver);
+        }
+    }
+
 }

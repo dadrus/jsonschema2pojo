@@ -18,8 +18,9 @@ package org.jsonschema2pojo.rules;
 
 import javax.validation.constraints.Size;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.jsonschema2pojo.Schema;
+
+import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.codemodel.JAnnotationUse;
 import com.sun.codemodel.JFieldVar;
 
@@ -35,7 +36,7 @@ public class MinLengthMaxLengthRule implements Rule<JFieldVar, JFieldVar> {
     public JFieldVar apply(String nodeName, JsonNode node, JFieldVar field, Schema currentSchema) {
         
         if (ruleFactory.getGenerationConfig().isIncludeJsr303Annotations()
-                && (node.has("minLength") || node.has("maxLength"))) {
+                && (node.has("minLength") || node.has("maxLength")) &&  field.type().fullName().equals("java.lang.String")) {
 
             JAnnotationUse annotation = field.annotate(Size.class);
 

@@ -25,6 +25,7 @@ import java.util.Iterator;
 
 import org.jsonschema2pojo.GenerationConfig;
 import org.jsonschema2pojo.Schema;
+import org.jsonschema2pojo.TypeBinding;
 import org.jsonschema2pojo.util.NameConverter;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -85,6 +86,7 @@ public class TypeRule implements Rule<JClassContainer, JType> {
     public JType apply(String nodeName, JsonNode node, JClassContainer jClassContainer, Schema schema) {
         
         String propertyTypeName = getTypeName(node);
+        TypeBinding binding = ruleFactory.getBindingResolver().getTypeBinding(schema.getId(), nodeName);
 
         JType type;
 
@@ -106,14 +108,23 @@ public class TypeRule implements Rule<JClassContainer, JType> {
 
             type = getJavaType(node.path("javaType").asText(), jClassContainer.owner());
         } else if (propertyTypeName.equals("string")) {
-
-            type = jClassContainer.owner().ref(String.class);
+            if(binding != null) {
+                type = binding.getJavaType(jClassContainer.owner());
+            } else {
+                type = jClassContainer.owner().ref(String.class);
+            }
         } else if (propertyTypeName.equals("number")) {
-
-            type = getNumberType(jClassContainer.owner(), node, ruleFactory.getGenerationConfig());
+            if(binding != null) {
+                type = binding.getJavaType(jClassContainer.owner());
+            } else {
+                type = getNumberType(jClassContainer.owner(), node, ruleFactory.getGenerationConfig());
+            }
         } else if (propertyTypeName.equals("integer")) {
-
-            type = getIntegerType(jClassContainer.owner(), node, ruleFactory.getGenerationConfig());
+            if(binding != null) {
+                type = binding.getJavaType(jClassContainer.owner());
+            } else {
+                type = getIntegerType(jClassContainer.owner(), node, ruleFactory.getGenerationConfig());
+            }
         } else if (propertyTypeName.equals("boolean")) {
 
             type = unboxIfNecessary(jClassContainer.owner().ref(Boolean.class), ruleFactory.getGenerationConfig());
@@ -125,9 +136,9 @@ public class TypeRule implements Rule<JClassContainer, JType> {
             type = jClassContainer.owner().ref(Object.class);
         }
 
-        if (!node.has("javaType") && node.has("format")) {
+        if (!node.has("javaType") && binding == null && node.has("format")) {
             type = ruleFactory.getFormatRule().apply(nodeName, node.get("format"), type, schema);
-        } else if (!node.has("javaType") && propertyTypeName.equals("string") && node.has("media")) {
+        } else if (!node.has("javaType") && binding == null && propertyTypeName.equals("string") && node.has("media")) {
             type = ruleFactory.getMediaRule().apply(nodeName, node.get("media"), type, schema);
         }
 

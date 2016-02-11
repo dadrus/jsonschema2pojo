@@ -18,8 +18,10 @@ package org.jsonschema2pojo.rules;
 
 import javax.validation.constraints.NotNull;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.jsonschema2pojo.Schema;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.sun.codemodel.JAnnotationUse;
 import com.sun.codemodel.JDocComment;
 import com.sun.codemodel.JDocCommentable;
 import com.sun.codemodel.JFieldVar;
@@ -70,7 +72,9 @@ public class RequiredRule implements Rule<JDocCommentable, JDocComment> {
 
             if (ruleFactory.getGenerationConfig().isIncludeJsr303Annotations()
                     && generatableType instanceof JFieldVar) {
-                ((JFieldVar) generatableType).annotate(NotNull.class);
+                JFieldVar field = (JFieldVar) generatableType;
+                JAnnotationUse annotation = field.annotate(NotNull.class);
+                annotation.param("message", String.format("Missing %s", field.name()));
             }
         }
 

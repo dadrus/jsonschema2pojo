@@ -16,19 +16,22 @@
 
 package org.jsonschema2pojo.rules;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.sun.codemodel.*;
-
-import org.jsonschema2pojo.Schema;
-import org.jsonschema2pojo.rules.RuleFactory;
-
-import javax.validation.constraints.NotNull;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.apache.commons.lang3.StringUtils.capitalize;
+import javax.validation.constraints.NotNull;
+
+import org.jsonschema2pojo.Schema;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.sun.codemodel.JAnnotationUse;
+import com.sun.codemodel.JDefinedClass;
+import com.sun.codemodel.JDocComment;
+import com.sun.codemodel.JDocCommentable;
+import com.sun.codemodel.JFieldVar;
+import com.sun.codemodel.JMethod;
+import com.sun.codemodel.JType;
 
 /**
  * Applies the "required" JSON schema rule.
@@ -83,7 +86,8 @@ public class RequiredArrayRule implements Rule<JDefinedClass, JDefinedClass> {
     }
 
     private void addNotNullAnnotation(JFieldVar field) {
-        field.annotate(NotNull.class);
+        JAnnotationUse annotation = field.annotate(NotNull.class);
+        annotation.param("message", String.format("Missing %s", field.name()));
     }
 
 

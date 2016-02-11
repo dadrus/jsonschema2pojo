@@ -108,11 +108,18 @@ public class ObjectRule implements Rule<JClassContainer, JType> {
             return e.getExistingClass();
         }
 
-        jclass._extends((JClass) superType);
+        JType objectType = classContainer.owner().ref(Object.class);
+        if(!superType.equals(objectType)) {
+            if(((JClass) superType).isInterface()) {
+                jclass._implements((JClass) superType);  
+            } else {
+                jclass._extends((JClass) superType);                
+            }
+        }
 
         schema.setJavaTypeIfEmpty(jclass);
         addGeneratedAnnotation(jclass);
-        
+
         if (node.has("deserializationClassProperty")) {
             addJsonTypeInfoAnnotation(jclass, node);
         }
@@ -253,18 +260,23 @@ public class ObjectRule implements Rule<JClassContainer, JType> {
                 }
             } else {
                 int mods = JMod.PUBLIC;
-                if(jClassContainer.isClass()) {
+                if (jClassContainer.isClass()) {
                     // the generated lass should be static
                     mods |= JMod.STATIC;
                 }
-                
+
                 // NOTE: the following if block makes no sense. Both JPackage and JDefinedClass
                 // implementations just delegate the _class(name) to _class(mods, name) and the last one
                 // to _class(mods, name, classType)
-                if (usePolymorphicDeserialization) {
-                    newType = jClassContainer._class(mods, getClassName(nodeName, jClassContainer), ClassType.CLASS);
+                if (node.has("properties")) {
+                    if (usePolymorphicDeserialization) {
+                        newType = jClassContainer._class(mods, getClassName(nodeName, jClassContainer), ClassType.CLASS);
+                    } else {
+                        newType = jClassContainer._class(mods, getClassName(nodeName, jClassContainer));
+                    }
                 } else {
-                    newType = jClassContainer._class(mods, getClassName(nodeName, jClassContainer));
+                    // node has no properties. Generating it as a marker interface
+                    newType = jClassContainer._interface(mods, getClassName(nodeName, jClassContainer));
                 }
             }
         } catch (JClassAlreadyExistsException e) {
@@ -371,6 +383,11 @@ public class ObjectRule implements Rule<JClassContainer, JType> {
     }
 
     private void addToString(JDefinedClass jclass) {
+        Map<String, JFieldVar> fields = jclass.fields();
+        if (fields.isEmpty()) {
+            return;
+        }
+        
         JMethod toString = jclass.method(JMod.PUBLIC, String.class, "toString");
 
         Class<?> toStringBuilder = ruleFactory.getGenerationConfig().isUseCommonsLang3() ? org.apache.commons.lang3.builder.ToStringBuilder.class : org.apache.commons.lang.builder.ToStringBuilder.class;
@@ -483,7 +500,11 @@ public class ObjectRule implements Rule<JClassContainer, JType> {
 
     private void addInterfaces(JDefinedClass jclass, JsonNode javaInterfaces) {
         for (JsonNode i : javaInterfaces) {
-            jclass._implements(resolveType(jclass._package(), i.asText()));
+            if(jclass.isInterface()) {
+                jclass._extends(resolveType(jclass._package(), i.asText()));
+            } else {
+                jclass._implements(resolveType(jclass._package(), i.asText()));
+            }
         }
     }
 
@@ -512,7 +533,7 @@ public class ObjectRule implements Rule<JClassContainer, JType> {
     }
 
     private String makeUnique(String className, JClassContainer jClassContainer) {
-        if(!isClassDefined(className, jClassContainer)) {
+        if (!isClassDefined(className, jClassContainer)) {
             return className;
         } else {
             return makeUnique(className + "_", jClassContainer);
@@ -521,9 +542,9 @@ public class ObjectRule implements Rule<JClassContainer, JType> {
 
     private boolean isClassDefined(String className, JClassContainer jClassContainer) {
         Iterator<JDefinedClass> it = jClassContainer.classes();
-        while(it.hasNext()) {
+        while (it.hasNext()) {
             JDefinedClass definedClass = it.next();
-            if(className.equals(definedClass.name())) {
+            if (className.equals(definedClass.name())) {
                 return true;
             }
         }

@@ -21,6 +21,7 @@ package org.jsonschema2pojo;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import com.sun.codemodel.JDefinedClass;
 import com.sun.codemodel.JEnumConstant;
@@ -43,6 +44,10 @@ public class GsonAnnotator extends AbstractAnnotator {
     public void propertyField(JFieldVar field, JDefinedClass clazz, String propertyName, JsonNode propertyNode) {
         field.annotate(SerializedName.class).param("value", propertyName);
         field.annotate(Expose.class);
+        TypeBinding binding = bindingResolver.getTypeBinding(field.type());
+        if(binding != null) {
+            field.annotate(JsonAdapter.class).param("value", binding.getTypeAdapter(clazz.owner()));
+        }
     }
 
     @Override

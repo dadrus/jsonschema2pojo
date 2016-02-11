@@ -26,6 +26,7 @@ import org.jsonschema2pojo.AllFileFilter
 import org.jsonschema2pojo.GenerationConfig
 import org.jsonschema2pojo.NoopAnnotator
 import org.jsonschema2pojo.SourceType
+import org.jsonschema2pojo.TypeBinding;
 import org.jsonschema2pojo.rules.RuleFactory
 
 /**
@@ -70,6 +71,7 @@ public class JsonSchemaExtension implements GenerationConfig {
   boolean useLongIntegers
   boolean usePrimitives
   Map<URI, String> idMappings
+  List<TypeBinding> typeBindings
   FileFilter fileFilter
 
   public JsonSchemaExtension() {
@@ -107,7 +109,8 @@ public class JsonSchemaExtension implements GenerationConfig {
     includeAccessors = true
     targetVersion = '1.6'
     includeDynamicAccessors = false
-    idMappings = [:];
+    idMappings = [:]
+    typeBindings = []
   }
 
   @Override

@@ -16,14 +16,19 @@
 
 package org.jsonschema2pojo.integration.config;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.jsonschema2pojo.integration.util.CodeGenerationHelper.config;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 import java.lang.reflect.Method;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.jsonschema2pojo.Annotator;
+import org.jsonschema2pojo.BindingResolver;
 import org.jsonschema2pojo.integration.util.Jsonschema2PojoRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -170,6 +175,10 @@ public class CustomAnnotatorIT {
                 JDefinedClass clazz, String propertyName) {
             field.annotate(Deprecated.class);
 
+        }
+
+        @Override
+        public void setBindingResolver(BindingResolver bindingResolver) {
         }
 
     }

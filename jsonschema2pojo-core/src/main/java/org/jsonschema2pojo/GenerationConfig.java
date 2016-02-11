@@ -21,6 +21,7 @@ import java.io.FileFilter;
 import java.net.URI;
 import java.net.URL;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.jsonschema2pojo.rules.RuleFactory;
@@ -373,5 +374,6 @@ public interface GenerationConfig {
      * @return The map containing the mapping between schema ids and corresponding java package names.
      */
     Map<URI, String> getIdMappings();
-
+    
+    List<TypeBinding> getTypeBindings();
 }

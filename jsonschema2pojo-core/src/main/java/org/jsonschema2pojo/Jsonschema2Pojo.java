@@ -49,11 +49,12 @@ public class Jsonschema2Pojo {
      *             if the application is unable to read data from the source
      */
     public static void generate(GenerationConfig config) throws IOException {
-        Annotator annotator = getAnnotator(config);
         RuleFactory ruleFactory = createRuleFactory(config);
-
-        ruleFactory.setAnnotator(annotator);
         ruleFactory.setGenerationConfig(config);
+        
+        Annotator annotator = getAnnotator(config);
+        annotator.setBindingResolver(ruleFactory.getBindingResolver());
+        ruleFactory.setAnnotator(annotator);
 
         SchemaMapper mapper = new SchemaMapper(ruleFactory, new SchemaGenerator());
 

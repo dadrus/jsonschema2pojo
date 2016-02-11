@@ -27,6 +27,8 @@ import com.sun.codemodel.JMethod;
  * plug in different Annotator implemenations.
  */
 public abstract class AbstractAnnotator implements Annotator {
+    
+    protected BindingResolver bindingResolver;
 
     @Override
     public void propertyOrder(JDefinedClass clazz, JsonNode propertiesNode) {
@@ -76,6 +78,11 @@ public abstract class AbstractAnnotator implements Annotator {
 
     @Override
     public void additionalPropertiesField(JFieldVar field, JDefinedClass clazz, String propertyName) {
+    }
+    
+    @Override
+    public void setBindingResolver(BindingResolver bindingResolver) {
+        this.bindingResolver = bindingResolver;
     }
 
 }

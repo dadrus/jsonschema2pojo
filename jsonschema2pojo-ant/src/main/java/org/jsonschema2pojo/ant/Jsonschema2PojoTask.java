@@ -16,7 +16,8 @@
 
 package org.jsonschema2pojo.ant;
 
-import static org.apache.commons.lang3.StringUtils.*;
+import static org.apache.commons.lang3.StringUtils.defaultString;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -44,6 +45,7 @@ import org.jsonschema2pojo.GenerationConfig;
 import org.jsonschema2pojo.Jsonschema2Pojo;
 import org.jsonschema2pojo.NoopAnnotator;
 import org.jsonschema2pojo.SourceType;
+import org.jsonschema2pojo.TypeBinding;
 import org.jsonschema2pojo.URLProtocol;
 import org.jsonschema2pojo.rules.RuleFactory;
 import org.jsonschema2pojo.util.URLUtil;
@@ -791,5 +793,10 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
     @Override
     public Map<URI, String> getIdMappings() {
         return Collections.emptyMap();
+    }
+
+    @Override
+    public List<TypeBinding> getTypeBindings() {
+        return Collections.emptyList();
     }
 }
