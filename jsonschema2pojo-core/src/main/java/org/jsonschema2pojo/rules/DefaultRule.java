@@ -16,6 +16,20 @@
 
 package org.jsonschema2pojo.rules;
 
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.joda.time.LocalDate;
+import org.joda.time.LocalTime;
+import org.jsonschema2pojo.Schema;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
@@ -27,18 +41,6 @@ import com.sun.codemodel.JExpression;
 import com.sun.codemodel.JFieldVar;
 import com.sun.codemodel.JInvocation;
 import com.sun.codemodel.JType;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import static org.apache.commons.lang3.StringUtils.*;
-import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
-import org.joda.time.LocalTime;
-import org.jsonschema2pojo.Schema;
 
 /**
  * Applies the "enum" schema rule.
@@ -115,7 +117,7 @@ public class DefaultRule implements Rule<JFieldVar, JFieldVar> {
         } else if (fieldType.fullName().equals(boolean.class.getName())) {
             return JExpr.lit(Boolean.parseBoolean(node.asText()));
 
-        } else if (fieldType.fullName().equals(getDateTimeType().getName())) {
+        } else if (fieldType.fullName().equals(Date.class.getName())) {
             long millisecs = parseDateToMillisecs(node.asText());
 
             JInvocation newDateTime = JExpr._new(fieldType);
@@ -145,10 +147,6 @@ public class DefaultRule implements Rule<JFieldVar, JFieldVar> {
 
         }
 
-    }
-
-    private Class<?> getDateTimeType() {
-        return ruleFactory.getGenerationConfig().isUseJodaDates() ? DateTime.class : Date.class;
     }
 
     /**

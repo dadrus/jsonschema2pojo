@@ -166,30 +166,6 @@ public class DefaultGenerationConfig implements GenerationConfig {
     }
 
     /**
-     * @return false
-     */
-    @Override
-    public boolean isUseJodaDates() {
-        return false;
-    }
-
-    /**
-     * @return false
-     */
-    @Override
-    public boolean isUseJodaLocalDates() {
-        return false;
-    }
-
-    /**
-     * @return false
-     */
-    @Override
-    public boolean isUseJodaLocalTimes() {
-        return false;
-    }
-
-    /**
      * @return <code>false</code>
      */
     @Override
@@ -277,27 +253,27 @@ public class DefaultGenerationConfig implements GenerationConfig {
     }
 
     @Override
-    public String getDateTimeType() {
-        return null;
-    }
-
-    @Override
-    public String getDateType() {
-        return null;
-    }
-
-    @Override
-    public String getTimeType() {
-        return null;
-    }
-
-    @Override
     public Map<URI, String> getIdMappings() {
         return Collections.emptyMap();
     }
 
     @Override
-    public List<TypeBinding> getTypeBindings() {
+    public List<Binding> getTypeBindings() {
+        return Collections.emptyList();
+    }
+    
+    @Override
+    public List<Binding> getFormatBindings() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<Binding> getMediaTypeBindings() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<Binding> getMediaEncodingBindings() {
         return Collections.emptyList();
     }
 }

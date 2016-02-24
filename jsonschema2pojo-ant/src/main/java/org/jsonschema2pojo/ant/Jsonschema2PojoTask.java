@@ -41,11 +41,11 @@ import org.apache.tools.ant.types.Reference;
 import org.jsonschema2pojo.AllFileFilter;
 import org.jsonschema2pojo.AnnotationStyle;
 import org.jsonschema2pojo.Annotator;
+import org.jsonschema2pojo.Binding;
 import org.jsonschema2pojo.GenerationConfig;
 import org.jsonschema2pojo.Jsonschema2Pojo;
 import org.jsonschema2pojo.NoopAnnotator;
 import org.jsonschema2pojo.SourceType;
-import org.jsonschema2pojo.TypeBinding;
 import org.jsonschema2pojo.URLProtocol;
 import org.jsonschema2pojo.rules.RuleFactory;
 import org.jsonschema2pojo.util.URLUtil;
@@ -103,12 +103,6 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     private String outputEncoding = "UTF-8";
 
-    private boolean useJodaDates = false;
-
-    private boolean useJodaLocalDates = false;
-
-    private boolean useJodaLocalTimes = false;
-
     private boolean useCommonsLang3 = false;
 
     private boolean parcelable = false;
@@ -128,12 +122,6 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
     private String targetVersion = "1.6";
 
     private boolean includeDynamicAccessors = false;
-
-    private String dateTimeType = null;
-
-    private String timeType = null;
-
-    private String dateType = null;
 
 
     /**
@@ -470,42 +458,6 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
     }
 
     /**
-     * Sets the 'useJodaDates' property of this class
-     *
-     * @param useJodaDates
-     *            Whether to use {@link org.joda.time.DateTime} instead of
-     *            {@link java.util.Date} when adding date type fields to
-     *            generated Java types.
-     */
-    public void setUseJodaDates(boolean useJodaDates) {
-        this.useJodaDates = useJodaDates;
-    }
-
-    /**
-     * Sets the 'useJodaLocalDates' property of this class
-     *
-     * @param useJodaLocalDates
-     *            Whether to use {@link org.joda.time.LocalDate} instead of
-     *            string when adding string fields of format date (not
-     *            date-time) to generated Java types.
-     */
-    public void setUseJodaLocalDates(boolean useJodaLocalDates) {
-        this.useJodaLocalDates = useJodaLocalDates;
-    }
-
-    /**
-     * Sets the 'useJodaLocalTimes' property of this class
-     *
-     * @param useJodaLocalTimes
-     *            Whether to use {@link org.joda.time.LocalTime} instead of
-     *            string when adding string fields of format time (not
-     *            date-time) to generated Java types.
-     */
-    public void setUseJodaLocalTimes(boolean useJodaLocalTimes) {
-        this.useJodaLocalTimes = useJodaLocalTimes;
-    }
-
-    /**
      * Sets the 'useCommonsLang3' property of this class
      *
      * @param useCommonsLang3
@@ -701,21 +653,6 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
     }
 
     @Override
-    public boolean isUseJodaDates() {
-        return useJodaDates;
-    }
-
-    @Override
-    public boolean isUseJodaLocalDates() {
-        return useJodaLocalDates;
-    }
-
-    @Override
-    public boolean isUseJodaLocalTimes() {
-        return useJodaLocalTimes;
-    }
-
-    @Override
     public boolean isUseCommonsLang3() {
         return useCommonsLang3;
     }
@@ -776,27 +713,27 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
     }
 
     @Override
-    public String getDateTimeType() {
-        return dateTimeType;
-    }
-
-    @Override
-    public String getDateType() {
-        return dateType;
-    }
-
-    @Override
-    public String getTimeType() {
-        return timeType;
-    }
-
-    @Override
     public Map<URI, String> getIdMappings() {
         return Collections.emptyMap();
     }
 
     @Override
-    public List<TypeBinding> getTypeBindings() {
+    public List<Binding> getTypeBindings() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<Binding> getFormatBindings() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<Binding> getMediaTypeBindings() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<Binding> getMediaEncodingBindings() {
         return Collections.emptyList();
     }
 }

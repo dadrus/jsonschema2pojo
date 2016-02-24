@@ -19,7 +19,7 @@ package org.jsonschema2pojo;
 import com.sun.codemodel.JCodeModel;
 import com.sun.codemodel.JType;
 
-public class TypeBinding {
+public class Binding {
     
     /**
      * A json type which shall be replaced by a Java type
@@ -65,7 +65,7 @@ public class TypeBinding {
     }
     
     public JType getTypeAdapter(JCodeModel jCodeModel) {
-        return jCodeModel.ref(typeAdapter);
+        return typeAdapter != null ? jCodeModel.ref(typeAdapter) : null;
     }
 
 }

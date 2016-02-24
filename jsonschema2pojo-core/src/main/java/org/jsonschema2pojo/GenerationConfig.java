@@ -203,33 +203,6 @@ public interface GenerationConfig {
     String getOutputEncoding();
 
     /**
-     * Gets the 'useJodaDates' configuration option.
-     *
-     * @return Whether to use {@link org.joda.time.DateTime} instead of
-     *         {@link java.util.Date} when adding date type fields to generated
-     *         Java types.
-     */
-    boolean isUseJodaDates();
-
-    /**
-     * Gets the 'useJodaLocalDates' configuration option.
-     *
-     * @return Whether to use {@link org.joda.time.LocalDate} instead of string
-     *         when adding string type fields with a format of date (not
-     *         date-time) to generated Java types.
-     */
-    boolean isUseJodaLocalDates();
-
-    /**
-     * Gets the 'useJodaLocalTimes' configuration option.
-     *
-     * @return Whether to use {@link org.joda.time.LocalTime} instead of string
-     *         when adding string type fields with a format of time (not
-     *         date-time) to generated Java types.
-     */
-    boolean isUseJodaLocalTimes();
-
-    /**
      * Gets the 'useCommonsLang3' configuration option.
      *
      * @return Whether to use commons-lang 3.x imports instead of commons-lang
@@ -322,58 +295,17 @@ public interface GenerationConfig {
     boolean isIncludeDynamicAccessors();
 
     /**
-     * Gets the `dateTimeType` configuration option.
-     * <p>
-     * Example values:
-     * <ul>
-     * <li><code>org.joda.time.LocalDateTime</code> (Joda)</li>
-     * <li><code>java.time.LocalDateTime</code> (JSR310)</li>
-     * <li><code>null</code> (default behavior)</li>
-     * </ul>
-     *
-     * @return The java type to use instead of {@link java.util.Date} when
-     *         adding date type fields to generate Java types.
-     */
-    String getDateTimeType();
-
-    /**
-     * Gets the `dateType` configuration option.
-     * <p>
-     * Example values:
-     * <ul>
-     * <li><code>org.joda.time.LocalDate</code> (Joda)</li>
-     * <li><code>java.time.LocalDate</code> (JSR310)</li>
-     * <li><code>null</code> (default behavior)</li>
-     * </ul>
-     *
-     * @return The java type to use instead of string when adding string type
-     *         fields with a format of date (not date-time) to generated Java
-     *         types.
-     */
-    String getDateType();
-
-    /**
-     * Gets the `timeType` configuration option.
-     * <p>
-     * Example values:
-     * <ul>
-     * <li><code>org.joda.time.LocalTime</code> (Joda)</li>
-     * <li><code>java.time.LocalTime</code> (JSR310)</li>
-     * <li><code>null</code> (default behavior)</li>
-     * </ul>
-     *
-     * @return The java type to use instead of string when adding string type
-     *         fields with a format of time (not date-time) to generated Java
-     *         types.
-     */
-    String getTimeType();
-
-    /**
      * Gets the 'idMapping' configuration option
      * 
      * @return The map containing the mapping between schema ids and corresponding java package names.
      */
     Map<URI, String> getIdMappings();
     
-    List<TypeBinding> getTypeBindings();
+    List<Binding> getTypeBindings();
+    
+    List<Binding> getFormatBindings();
+
+    List<Binding> getMediaTypeBindings();
+
+    List<Binding> getMediaEncodingBindings();
 }

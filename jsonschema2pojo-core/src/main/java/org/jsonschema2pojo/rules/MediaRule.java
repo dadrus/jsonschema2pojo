@@ -16,6 +16,7 @@
 
 package org.jsonschema2pojo.rules;
 
+import org.jsonschema2pojo.Binding;
 import org.jsonschema2pojo.Schema;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -26,13 +27,17 @@ import com.sun.codemodel.JType;
  * Applies the "media" hyper schema rule.
  * </p>
  * 
- * @see <a href="http://json-schema.org/latest/json-schema-hypermedia.html#rfc.section.4.3">
- *   Section 4.3 media, JSON Hyper-Schema: Hypertext definitions for JSON Schema</a>
+ * @see <a href=
+ *      "http://json-schema.org/latest/json-schema-hypermedia.html#rfc.section.4.3">
+ *      Section 4.3 media, JSON Hyper-Schema: Hypertext definitions for JSON
+ *      Schema</a>
  * 
  * @author Christian Trimble
  * @since 0.4.2
  */
 public class MediaRule implements Rule<JType, JType> {
+
+    public static final String MEDIA_TYPE = "type";
 
     public static final String BINARY_ENCODING = "binaryEncoding";
 
@@ -43,7 +48,8 @@ public class MediaRule implements Rule<JType, JType> {
      * Constructs a new media rule.
      * </p>
      * 
-     * @param ruleFactory the rule factory that created this rule.
+     * @param ruleFactory
+     *            the rule factory that created this rule.
      * @since 0.4.2
      */
     protected MediaRule(RuleFactory ruleFactory) {
@@ -55,12 +61,12 @@ public class MediaRule implements Rule<JType, JType> {
      * Applies this schema rule.
      * </p>
      * 
-     * @param nodeName 
+     * @param nodeName
      *            the name of the property.
      * @param mediaNode
      *            the media node
      * @param baseType
-     *            the type with the media node.  This must be java.lang.String.
+     *            the type with the media node. This must be java.lang.String.
      * @param schema
      *            the schema containing the property.
      * @return byte[] when a binary encoding is specified, baseType otherwise.
@@ -68,10 +74,22 @@ public class MediaRule implements Rule<JType, JType> {
      */
     @Override
     public JType apply(String nodeName, JsonNode mediaNode, JType baseType, Schema schema) {
+        String mediaType = mediaNode.has(MEDIA_TYPE) ? mediaNode.get(MEDIA_TYPE).asText() : null;
+        Binding binding = ruleFactory.getBindingResolver().getMediaTypeBinding(mediaType);
+        if (binding != null) {
+            return binding.getJavaType(baseType.owner());
+        }
+        
         if (!mediaNode.has(BINARY_ENCODING)) {
             return baseType;
         }
 
-        return baseType.owner().ref(byte[].class);
+        String binaryEncoding = mediaNode.get(BINARY_ENCODING).asText();
+        binding = ruleFactory.getBindingResolver().getMediaEncodingBinding(binaryEncoding);
+        if (binding != null) {
+            return binding.getJavaType(baseType.owner());
+        } else {
+            return baseType.owner().ref(byte[].class);
+        }
     }
 }

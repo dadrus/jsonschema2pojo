@@ -26,6 +26,7 @@ import com.google.gson.annotations.SerializedName;
 import com.sun.codemodel.JDefinedClass;
 import com.sun.codemodel.JEnumConstant;
 import com.sun.codemodel.JFieldVar;
+import com.sun.codemodel.JType;
 
 /**
  * Annotates generated Java types using Gson. The annotations used here are most
@@ -35,8 +36,8 @@ import com.sun.codemodel.JFieldVar;
  * {@link GenerationConfig#getPropertyWordDelimiters} to filter out underscores
  * or other unwanted delimiters but still marshal/unmarshal the same content.
  * 
- * @see <a
- *      href="https://code.google.com/p/google-gson/">https://code.google.com/p/google-gson/</a>
+ * @see <a href="https://code.google.com/p/google-gson/">https://code.google.com
+ *      /p/google-gson/</a>
  */
 public class GsonAnnotator extends AbstractAnnotator {
 
@@ -44,9 +45,12 @@ public class GsonAnnotator extends AbstractAnnotator {
     public void propertyField(JFieldVar field, JDefinedClass clazz, String propertyName, JsonNode propertyNode) {
         field.annotate(SerializedName.class).param("value", propertyName);
         field.annotate(Expose.class);
-        TypeBinding binding = bindingResolver.getTypeBinding(field.type());
-        if(binding != null) {
-            field.annotate(JsonAdapter.class).param("value", binding.getTypeAdapter(clazz.owner()));
+        Binding binding = bindingResolver.getTypeBinding(field.type());
+        if (binding != null) {
+            JType adapter = binding.getTypeAdapter(clazz.owner());
+            if (adapter != null) {
+                field.annotate(JsonAdapter.class).param("value", adapter);
+            }
         }
     }
 

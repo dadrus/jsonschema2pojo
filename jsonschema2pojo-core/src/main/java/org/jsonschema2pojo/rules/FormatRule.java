@@ -21,23 +21,19 @@ import java.util.Date;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
-import org.joda.time.LocalTime;
 import org.jsonschema2pojo.GenerationConfig;
 import org.jsonschema2pojo.Schema;
-import org.jsonschema2pojo.exception.GenerationException;
+import org.jsonschema2pojo.Binding;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.codemodel.JType;
-import static org.apache.commons.lang.StringUtils.isEmpty;
-import static java.lang.String.format;
 
 /**
  * Applies the "format" schema rule.
  * 
- * @see <a
- *      href="http://tools.ietf.org/html/draft-zyp-json-schema-03#section-5.23">http://tools.ietf.org/html/draft-zyp-json-schema-03#section-5.23</a>
+ * @see <a href=
+ *      "http://tools.ietf.org/html/draft-zyp-json-schema-03#section-5.23">http:
+ *      //tools.ietf.org/html/draft-zyp-json-schema-03#section-5.23</a>
  */
 public class FormatRule implements Rule<JType, JType> {
 
@@ -52,9 +48,12 @@ public class FormatRule implements Rule<JType, JType> {
      * <p>
      * This rule maps format values to Java types:
      * <ul>
-     * <li>"format":"date-time" =&gt; {@link java.util.Date} or {@link org.joda.time.DateTime} (if config useJodaDates is set)
-     * <li>"format":"date" =&gt; {@link String} or {@link org.joda.time.LocalDate} (if config useJodaLocalDates is set)
-     * <li>"format":"time" =&gt; {@link String} or {@link org.joda.time.LocalTime} (if config useJodaLocalTimes is set)
+     * <li>"format":"date-time" =&gt; {@link java.util.Date} or
+     * {@link org.joda.time.DateTime} (if config useJodaDates is set)
+     * <li>"format":"date" =&gt; {@link String} or
+     * {@link org.joda.time.LocalDate} (if config useJodaLocalDates is set)
+     * <li>"format":"time" =&gt; {@link String} or
+     * {@link org.joda.time.LocalTime} (if config useJodaLocalTimes is set)
      * <li>"format":"utc-millisec" =&gt; <code>long</code>
      * <li>"format":"regex" =&gt; {@link java.util.regex.Pattern}
      * <li>"format":"color" =&gt; {@link String}
@@ -82,94 +81,44 @@ public class FormatRule implements Rule<JType, JType> {
     @Override
     public JType apply(String nodeName, JsonNode node, JType baseType, Schema schema) {
 
-        if (node.asText().equals("date-time")) {
-            return baseType.owner().ref(getDateTimeType());
+        String format = node.asText();
 
-        } else if (node.asText().equals("date")) {
-            return baseType.owner().ref(getDateOnlyType());
+        Binding binding = ruleFactory.getBindingResolver().getFormatBinding(format);
+        if (binding != null) {
+            return binding.getJavaType(baseType.owner());
+        }
 
-        } else if (node.asText().equals("time")) {
-            return baseType.owner().ref(getTimeOnlyType());
-
-        } else if (node.asText().equals("utc-millisec")) {
+        if (format.equals("date-time")) {
+            return baseType.owner().ref(Date.class);
+        } else if (format.equals("date")) {
+            return baseType.owner().ref(String.class);
+        } else if (format.equals("time")) {
+            return baseType.owner().ref(String.class);
+        } else if (format.equals("utc-millisec")) {
             return unboxIfNecessary(baseType.owner().ref(Long.class), ruleFactory.getGenerationConfig());
-
-        } else if (node.asText().equals("regex")) {
+        } else if (format.equals("regex")) {
             return baseType.owner().ref(Pattern.class);
-
-        } else if (node.asText().equals("color")) {
+        } else if (format.equals("color")) {
             return baseType.owner().ref(String.class);
-
-        } else if (node.asText().equals("style")) {
+        } else if (format.equals("style")) {
             return baseType.owner().ref(String.class);
-
-        } else if (node.asText().equals("phone")) {
+        } else if (format.equals("phone")) {
             return baseType.owner().ref(String.class);
-
-        } else if (node.asText().equals("uri")) {
+        } else if (format.equals("uri")) {
             return baseType.owner().ref(URI.class);
-
-        } else if (node.asText().equals("email")) {
+        } else if (format.equals("email")) {
             return baseType.owner().ref(String.class);
-
-        } else if (node.asText().equals("ip-address")) {
+        } else if (format.equals("ip-address")) {
             return baseType.owner().ref(String.class);
-
-        } else if (node.asText().equals("ipv6")) {
+        } else if (format.equals("ipv6")) {
             return baseType.owner().ref(String.class);
-
-        } else if (node.asText().equals("host-name")) {
+        } else if (format.equals("host-name")) {
             return baseType.owner().ref(String.class);
-        }
-          else if (node.asText().equals("uuid")) {
-                return baseType.owner().ref(UUID.class);
-        }
-         else {
+        } else if (format.equals("uuid")) {
+            return baseType.owner().ref(UUID.class);
+        } else {
             return baseType;
         }
-
-    }
-
-    private Class<?> getDateTimeType() {
-        String type=ruleFactory.getGenerationConfig().getDateTimeType();
-        if (!isEmpty(type)){
-            try {
-                Class<?> clazz=Class.forName(type);
-                return clazz;
-            }
-            catch (ClassNotFoundException e) {
-                throw new GenerationException(format("could not load java type %s for date-time format", type), e);
-            }
-        }
-        return ruleFactory.getGenerationConfig().isUseJodaDates() ? DateTime.class : Date.class;
-    }
-
-    private Class<?> getDateOnlyType() {
-        String type=ruleFactory.getGenerationConfig().getDateType();
-        if (!isEmpty(type)){
-            try {
-                Class<?> clazz=Class.forName(type);
-                return clazz;
-            }
-            catch (ClassNotFoundException e) {
-                throw new GenerationException(format("could not load java type %s for date format", type), e);
-            }
-        }
-        return ruleFactory.getGenerationConfig().isUseJodaLocalDates() ? LocalDate.class : String.class;
-    }
-
-    private Class<?> getTimeOnlyType() {
-        String type=ruleFactory.getGenerationConfig().getTimeType();
-        if (!isEmpty(type)){
-            try {
-                Class<?> clazz=Class.forName(type);
-                return clazz;
-            }
-            catch (ClassNotFoundException e) {
-                throw new GenerationException(format("could not load java type %s for time format", type), e);
-            }
-        }
-        return ruleFactory.getGenerationConfig().isUseJodaLocalTimes() ? LocalTime.class : String.class;
     }
 
     private JType unboxIfNecessary(JType type, GenerationConfig config) {

@@ -30,10 +30,10 @@ import java.util.Map;
 import org.jsonschema2pojo.AllFileFilter;
 import org.jsonschema2pojo.AnnotationStyle;
 import org.jsonschema2pojo.Annotator;
+import org.jsonschema2pojo.Binding;
 import org.jsonschema2pojo.GenerationConfig;
 import org.jsonschema2pojo.NoopAnnotator;
 import org.jsonschema2pojo.SourceType;
-import org.jsonschema2pojo.TypeBinding;
 import org.jsonschema2pojo.rules.RuleFactory;
 
 import com.beust.jcommander.JCommander;
@@ -105,24 +105,6 @@ public class Arguments implements GenerationConfig {
 
     @Parameter(names = { "-e", "--output-encoding" }, description = "The character encoding that should be used when writing the generated Java source files.")
     private String outputEncoding = "UTF-8";
-
-    @Parameter(names = { "-j", "--joda-dates" }, description = "Whether to use org.joda.time.DateTime instead of java" + ".util.Date when adding date-time type fields to generated Java types.")
-    private boolean useJodaDates = false;
-
-    @Parameter(names = { "-jd", "--joda-local-dates" }, description = "Whether to use org.joda.time.LocalDate instead" + "of String when adding date type fields to generated Java types.")
-    private boolean useJodaLocalDates = false;
-
-    @Parameter(names = { "-jt", "--joda-local-times" }, description = "Whether to use org.joda.time.LocalTime instead" + "of String when adding time type fields to generated Java types.")
-    private boolean useJodaLocalTimes = false;
-
-    @Parameter(names = { "-dtt", "--datetime-class" }, description = "Specify datetime class")
-    private String dateTimeType = null;
-
-    @Parameter(names = { "-tt", "--time-class" }, description = "Specify time class")
-    private String timeType = null;
-
-    @Parameter(names = { "-dt", "--date-class" }, description = "Specify date class")
-    private String dateType = null;
 
     @Parameter(names = { "-c3", "--commons-lang3" }, description = "Whether to use commons-lang 3.x imports instead of commons-lang 2.x imports when adding equals, hashCode and toString methods.")
     private boolean useCommonsLang3 = false;
@@ -272,21 +254,6 @@ public class Arguments implements GenerationConfig {
     }
 
     @Override
-    public boolean isUseJodaDates() {
-        return useJodaDates;
-    }
-
-    @Override
-    public boolean isUseJodaLocalDates() {
-        return useJodaLocalDates;
-    }
-
-    @Override
-    public boolean isUseJodaLocalTimes() {
-        return useJodaLocalTimes;
-    }
-
-    @Override
     public boolean isUseCommonsLang3() {
         return useCommonsLang3;
     }
@@ -351,27 +318,27 @@ public class Arguments implements GenerationConfig {
     }
 
     @Override
-    public String getDateTimeType() {
-        return dateTimeType;
-    }
-
-    @Override
-    public String getDateType() {
-        return dateType;
-    }
-
-    @Override
-    public String getTimeType() {
-        return timeType;
-    }
-
-    @Override
     public Map<URI, String> getIdMappings() {
         return Collections.emptyMap();
     }
 
     @Override
-    public List<TypeBinding> getTypeBindings() {
+    public List<Binding> getTypeBindings() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<Binding> getFormatBindings() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<Binding> getMediaTypeBindings() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<Binding> getMediaEncodingBindings() {
         return Collections.emptyList();
     }
 

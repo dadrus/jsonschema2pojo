@@ -15,18 +15,13 @@
  */
 package org.jsonschema2pojo.gradle
 
+import org.jsonschema2pojo.AllFileFilter
 import org.jsonschema2pojo.AnnotationStyle
 import org.jsonschema2pojo.Annotator
-
-import java.net.URI;
-import java.util.Collections;
-import java.util.Map;
-
-import org.jsonschema2pojo.AllFileFilter
+import org.jsonschema2pojo.Binding
 import org.jsonschema2pojo.GenerationConfig
 import org.jsonschema2pojo.NoopAnnotator
 import org.jsonschema2pojo.SourceType
-import org.jsonschema2pojo.TypeBinding;
 import org.jsonschema2pojo.rules.RuleFactory
 
 /**
@@ -71,7 +66,10 @@ public class JsonSchemaExtension implements GenerationConfig {
   boolean useLongIntegers
   boolean usePrimitives
   Map<URI, String> idMappings
-  List<TypeBinding> typeBindings
+  List<Binding> typeBindings
+  List<Binding> formatBindings
+  List<Binding> mediaEncodingBindings
+  List<Binding> mediaTypeBindings
   FileFilter fileFilter
 
   public JsonSchemaExtension() {
@@ -93,12 +91,6 @@ public class JsonSchemaExtension implements GenerationConfig {
     includeJsr303Annotations = false
     sourceType = SourceType.JSONSCHEMA
     outputEncoding = 'UTF-8'
-    useJodaDates = false
-    useJodaLocalDates = false
-    useJodaLocalTimes = false
-    dateTimeType = null
-    dateType = null
-    timeType = null
     useCommonsLang3 = false
     parcelable = false
     fileFilter = new AllFileFilter()
@@ -111,6 +103,9 @@ public class JsonSchemaExtension implements GenerationConfig {
     includeDynamicAccessors = false
     idMappings = [:]
     typeBindings = []
+    formatBindings = []
+    mediaEncodingBindings = []
+    mediaTypeBindings = []
   }
 
   @Override
@@ -164,12 +159,6 @@ public class JsonSchemaExtension implements GenerationConfig {
        |sourceType = ${sourceType.toString().toLowerCase()}
        |removeOldOutput = ${removeOldOutput}
        |outputEncoding = ${outputEncoding}
-       |useJodaDates = ${useJodaDates}
-       |useJodaLocalDates = ${useJodaLocalDates}
-       |useJodaLocalTimes = ${useJodaLocalTimes}
-       |dateTimeType = ${dateTimeType}
-       |dateType = ${dateType}
-       |timeType = ${timeType}
        |useCommonsLang3 = ${useCommonsLang3}
        |parcelable = ${parcelable}
        |initializeCollections = ${initializeCollections}

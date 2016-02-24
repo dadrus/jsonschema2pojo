@@ -28,9 +28,9 @@ public class BindingResolver {
         this.generationConfig = generationConfig;
     }
 
-    public TypeBinding getTypeBinding(URI namespace, String typeName) {
+    public Binding getTypeBinding(URI namespace, String typeName) {
         String absoluteName = namespace == null ? typeName : namespace.toString() + "/" + typeName;
-        for(TypeBinding binding : generationConfig.getTypeBindings()) {
+        for(Binding binding : generationConfig.getTypeBindings()) {
             if(binding.getJsonType().equals(absoluteName)) {
                 return binding;
             }
@@ -38,8 +38,53 @@ public class BindingResolver {
         return null;
     }
 
-    public TypeBinding getTypeBinding(JType clazz) {
-        for(TypeBinding binding : generationConfig.getTypeBindings()) {
+    public Binding getFormatBinding(String format) {
+        for(Binding binding : generationConfig.getFormatBindings()) {
+            if(binding.getJsonType().equals(format)) {
+                return binding;
+            }
+        }
+        return null;
+    }
+
+    public Binding getMediaTypeBinding(String mediaType) {
+        for(Binding binding : generationConfig.getMediaTypeBindings()) {
+            if(binding.getJsonType().equals(mediaType)) {
+                return binding;
+            }
+        }
+        return null;
+    }
+
+    public Binding getMediaEncodingBinding(String binaryEncoding) {
+        for(Binding binding : generationConfig.getMediaEncodingBindings()) {
+            if(binding.getJsonType().equals(binaryEncoding)) {
+                return binding;
+            }
+        }
+        return null;
+    }
+    
+    public Binding getTypeBinding(JType clazz) {
+        for(Binding binding : generationConfig.getTypeBindings()) {
+            if(clazz.fullName().equals(binding.getJavaType())) {
+                return binding;
+            }
+        }
+        
+        for(Binding binding : generationConfig.getFormatBindings()) {
+            if(clazz.fullName().equals(binding.getJavaType())) {
+                return binding;
+            }
+        }
+        
+        for(Binding binding : generationConfig.getMediaTypeBindings()) {
+            if(clazz.fullName().equals(binding.getJavaType())) {
+                return binding;
+            }
+        }
+        
+        for(Binding binding : generationConfig.getMediaEncodingBindings()) {
             if(clazz.fullName().equals(binding.getJavaType())) {
                 return binding;
             }

@@ -25,7 +25,7 @@ import java.util.Iterator;
 
 import org.jsonschema2pojo.GenerationConfig;
 import org.jsonschema2pojo.Schema;
-import org.jsonschema2pojo.TypeBinding;
+import org.jsonschema2pojo.Binding;
 import org.jsonschema2pojo.util.NameConverter;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -86,7 +86,7 @@ public class TypeRule implements Rule<JClassContainer, JType> {
     public JType apply(String nodeName, JsonNode node, JClassContainer jClassContainer, Schema schema) {
         
         String propertyTypeName = getTypeName(node);
-        TypeBinding binding = ruleFactory.getBindingResolver().getTypeBinding(schema.getId(), nodeName);
+        Binding binding = ruleFactory.getBindingResolver().getTypeBinding(schema.getId(), nodeName);
 
         JType type;
 

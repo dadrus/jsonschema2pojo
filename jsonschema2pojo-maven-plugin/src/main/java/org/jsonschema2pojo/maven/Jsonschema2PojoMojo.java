@@ -39,11 +39,11 @@ import org.jsonschema2pojo.AllFileFilter;
 import org.jsonschema2pojo.AnnotationStyle;
 import org.jsonschema2pojo.Annotator;
 import org.jsonschema2pojo.AnnotatorFactory;
+import org.jsonschema2pojo.Binding;
 import org.jsonschema2pojo.GenerationConfig;
 import org.jsonschema2pojo.Jsonschema2Pojo;
 import org.jsonschema2pojo.NoopAnnotator;
 import org.jsonschema2pojo.SourceType;
-import org.jsonschema2pojo.TypeBinding;
 import org.jsonschema2pojo.rules.RuleFactory;
 import org.jsonschema2pojo.util.URLUtil;
 
@@ -306,42 +306,6 @@ public class Jsonschema2PojoMojo extends AbstractMojo implements GenerationConfi
     private String outputEncoding = "UTF-8";
 
     /**
-     * Whether to use {@link org.joda.time.DateTime} instead of
-     * {@link java.util.Date} when adding date type fields to generated Java
-     * types.
-     *
-     * @parameter expression="${jsonschema2pojo.useJodaDates}" default-value="false"
-     * @since 0.4.0
-     */
-    private boolean useJodaDates = false;
-
-    /**
-     * Whether to use {@link org.joda.time.LocalDate} instead of string when
-     * adding string type fields of format date (not date-time) to generated
-     * Java types.
-     *
-     * @parameter expression="${jsonschema2pojo.useJodaLocalDates}"
-     *            default-value="false"
-     * @since 0.4.9
-     */
-    private boolean useJodaLocalDates = false;
-
-    /**
-     * Whether to use {@link org.joda.time.LocalTime} instead of string when
-     * adding string type fields of format time (not date-time) to generated
-     * Java types.
-     *
-     * @parameter expression="${jsonschema2pojo.useJodaLocalTimes}"
-     *            default-value="false"
-     * @since 0.4.9
-     */
-    private boolean useJodaLocalTimes = false;
-
-    private String dateTimeType = null;
-    private String timeType = null;
-    private String dateType = null;
-
-    /**
      * Whether to use commons-lang 3.x imports instead of commons-lang 2.x
      * imports when adding equals, hashCode and toString methods.
      *
@@ -480,13 +444,33 @@ public class Jsonschema2PojoMojo extends AbstractMojo implements GenerationConfi
     /**
      * The binding for json types to java types using a specific type adapter.
      * 
-     * @parameter expression="${jsonschema2pojo.idMapping}"
+     * @parameter expression="${jsonschema2pojo.typeBindings}"
      */
-    private List<TypeBinding> typeBindings = Collections.emptyList();
+    private List<Binding> typeBindings = Collections.emptyList();
+    
+    /**
+     * The binding for json formats to java types using a specific type adapter.
+     * 
+     * @parameter expression="${jsonschema2pojo.formatBindings}"
+     */
+    private List<Binding> formatBindings = Collections.emptyList();
+
+    /**
+     * The binding for json formats to java types using a specific type adapter.
+     * 
+     * @parameter expression="${jsonschema2pojo.mediaEncodingBindings}"
+     */
+    private List<Binding> mediaEncodingBindings = Collections.emptyList();
+
+    /**
+     * The binding for json formats to java types using a specific type adapter.
+     * 
+     * @parameter expression="${jsonschema2pojo.mediaTypeBindings}"
+     */
+    private List<Binding> mediaTypeBindings = Collections.emptyList();
 
     private FileFilter fileFilter = new AllFileFilter();
-
-
+    
     /**
      * Executes the plugin, to read the given source and behavioural properties
      * and generate POJOs. The current implementation acts as a wrapper around
@@ -697,21 +681,6 @@ public class Jsonschema2PojoMojo extends AbstractMojo implements GenerationConfi
     }
 
     @Override
-    public boolean isUseJodaDates() {
-        return useJodaDates;
-    }
-
-    @Override
-    public boolean isUseJodaLocalDates() {
-        return useJodaLocalDates;
-    }
-
-    @Override
-    public boolean isUseJodaLocalTimes() {
-        return useJodaLocalTimes;
-    }
-
-    @Override
     public boolean isUseCommonsLang3() {
         return useCommonsLang3;
     }
@@ -785,21 +754,6 @@ public class Jsonschema2PojoMojo extends AbstractMojo implements GenerationConfi
     }
 
     @Override
-    public String getDateTimeType() {
-        return dateTimeType;
-    }
-
-    @Override
-    public String getDateType() {
-        return dateType;
-    }
-
-    @Override
-    public String getTimeType() {
-        return timeType;
-    }
-
-    @Override
     public Map<URI, String> getIdMappings() {
         Map<URI, String> mappings = new HashMap<URI, String>();
         for(IdMapping idMapping : idMappings) {
@@ -809,8 +763,22 @@ public class Jsonschema2PojoMojo extends AbstractMojo implements GenerationConfi
     }
 
     @Override
-    public List<TypeBinding> getTypeBindings() {
+    public List<Binding> getTypeBindings() {
         return typeBindings;
     }
 
+    @Override
+    public List<Binding> getFormatBindings() {
+        return formatBindings;
+    }
+
+    @Override
+    public List<Binding> getMediaTypeBindings() {
+        return mediaTypeBindings;
+    }
+
+    @Override
+    public List<Binding> getMediaEncodingBindings() {
+        return mediaEncodingBindings;
+    }
 }
